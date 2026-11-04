@@ -107,6 +107,6 @@ and other sensitive files remain excluded from Git.
 2. PASS — All five Django tests passed, including last-unit refusal and transaction rollback.
 3. PASS — Chronos-Bolt Tiny and Chronos-2 both generated valid 30-day forecasts locally on CPU.
 4. PASS — Chronos-Bolt Tiny selected as the default model. It used 363.5 MB peak process memory versus 811.8 MB for Chronos-2. Forecast accuracy evaluation is deferred to Module 8.
-5. PENDING — Complete the final security audit, documentation review, architecture and permissions approval, and `m0-complete` tag before starting Module 1.
+5. PASS — Module 0 verification, documentation, and basic security checks completed. PENDING — Create the `m0-complete` tag and obtain architecture and permissions approval before Module 1.
 
 **Future stock rule:** In Modules 3–5, stock-changing service functions must update stock and write a matching `StockMovement` in the **same** database transaction. Module 0's test is not a substitute for the full sales and ledger tests.
