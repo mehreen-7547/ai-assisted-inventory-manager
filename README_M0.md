@@ -1,6 +1,6 @@
 # Module 0 — Django + SQLite + AI feasibility (Windows PowerShell)
 
-**Status:** Starter code prepared. Local Django tests and both model runs must still be completed on your laptop. No production inventory or sales module is built yet.
+Status: Local Django verification completed (5/5 tests passed). Both Chronos-Bolt Tiny and Chronos-2 successfully generated forecasts on CPU. Chronos-Bolt Tiny is the recommended default due to lower memory usage. Final Module 0 documentation and security checks are pending.
 
 ## Agreed database and stock rule
 
@@ -91,20 +91,22 @@ If your laptop has limited RAM, start with `--model bolt` and send the result be
 
 If Chronos-2 fails, report the error. That does not invalidate a successful Bolt test.
 
-## 7. Optional Git commit after your tests pass
+## 7. Git repository
 
-```powershell
-git init
-git add .
-git commit -m "M0: SQLite env config and atomic stock proof; AI feasibility"
-```
+This project is already initialized as a Git repository
+and connected to GitHub.
+
+Do not run `git init` again.
+
+Before committing, verify that `.env`, `db.sqlite3`,
+and other sensitive files remain excluded from Git.
 
 ## Module 0 acceptance checks
 
-1. Django 6.0.9 starts with SQLite configured from `.env`.
-2. Five Django tests pass, including the last-unit refusal and rollback checks.
-3. Both pretrained AI models report success or an explicit failure with timing and memory.
-4. Record model performance from your own laptop before choosing one.
-5. Do **not** begin Module 1 until Module 0 checks pass and you confirm.
+1. PASS — Django 6.0.9 starts successfully with SQLite configured through `.env`.
+2. PASS — All five Django tests passed, including last-unit refusal and transaction rollback.
+3. PASS — Chronos-Bolt Tiny and Chronos-2 both generated valid 30-day forecasts locally on CPU.
+4. PASS — Chronos-Bolt Tiny selected as the default model. It used 363.5 MB peak process memory versus 811.8 MB for Chronos-2. Forecast accuracy evaluation is deferred to Module 8.
+5. PENDING — Complete the final security audit, documentation review, architecture and permissions approval, and `m0-complete` tag before starting Module 1.
 
 **Future stock rule:** In Modules 3–5, stock-changing service functions must update stock and write a matching `StockMovement` in the **same** database transaction. Module 0's test is not a substitute for the full sales and ledger tests.

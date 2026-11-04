@@ -1,53 +1,138 @@
-# Module 0 report — pending laptop verification
+# Module 0 Report — Django, SQLite and AI Feasibility
+
+**Status:** Local verification completed. Final security audit, documentation update and completion tag pending.
 
 ## a) Built (five lines)
-1. Django starter retained with SQLite chosen from `.env`.
-2. Optional MySQL configuration can be enabled later without editing settings code.
-3. Temporary test-only stock table checks atomic conditional updates.
-4. One script tests both pretrained forecasting models independently on CPU.
-5. Results show worked/not worked, elapsed seconds and peak process RAM.
+
+1. Configured Django 6.0.9 with SQLite using environment variables.
+2. Retained optional MySQL configuration for a future approved migration.
+3. Verified conditional stock deduction and transaction rollback using temporary test models.
+4. Tested Chronos-Bolt Tiny and Chronos-2 locally using pretrained weights on CPU.
+5. Selected **Chronos-Bolt Tiny as the default forecasting model** based on lower memory usage.
 
 ## b) Files created/changed
-- Changed: `config/settings.py`, `.env.example`, `core/tests.py`, `scripts/ai_probe.py`, `README_M0.md`.
-- Added: `SQLITE_ARCHITECTURE_AMENDMENT.md`, `MODULE0_REPORT.md`.
-- Unchanged: requirements files, existing views/templates/URL routes, `.gitignore`.
 
-## c) Commands
-See `README_M0.md` steps 1–6. Main checks: `python manage.py check`, `python manage.py migrate`, `python manage.py test -v 2`, `python manage.py runserver`, `python scripts/ai_probe.py` (use the `.venv` Python paths in the README).
+- `config/settings.py` — environment-based database configuration and application settings.
+- `.env.example` — safe configuration template.
+- `core/tests.py` — five automated tests.
+- `scripts/ai_probe.py` — CPU forecasting feasibility test.
+- `requirements.txt` — pinned core dependencies.
+- `requirements-ai.txt` — pinned AI dependencies.
+- `README_M0.md` — installation and execution instructions.
+- `SQLITE_ARCHITECTURE_AMENDMENT.md` — database and stock-update decisions.
+- `MODULE0_REPORT.md` — verification results and conclusions.
 
-## d) Manual checks / expected results
-1. Django homepage opens: `Module 0 setup is running`.
-2. `manage.py test -v 2` reports 5 tests and OK.
-3. AI script reports one result per model; successful forecasts have 30 days and finite values.
-4. `ai_probe_results.json` contains time and memory for each model.
+No production inventory or sales models have been implemented.
 
-## e) Automated tests / failure conditions
-- Home page: fails on missing route/template or incorrect response.
-- Timezone: fails if not Asia/Kolkata or timezone support disabled.
-- SQLite connection: fails if another DB backend is active (this Module 0 test intentionally expects SQLite).
-- Last unit: fails if second deduction succeeds or stock becomes negative.
-- Rollback: fails if a simulated failure leaves stock deducted.
+## c) Commands executed
 
-## f) Assumptions and limits
-- Python 3.12/3.13 and Django 6.0.9 pinned; actual installation on the user's laptop pending.
-- AI weights and laptop resource use unverified until the user runs the script.
-- No production Product/Sale/StockMovement model added yet.
-- SQLite sequential tests do not prove behavior under simultaneous write requests.
-- No agreed feature or role changes made.
+```powershell
+python -m pip install -r .\techmindz_inventory_module0_sqlite_atomic\requirements.txt
+python .\techmindz_inventory_module0_sqlite_atomic\manage.py migrate
+python .\techmindz_inventory_module0_sqlite_atomic\manage.py test core
+python .\techmindz_inventory_module0_sqlite_atomic\manage.py runserver
+
+python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r .\techmindz_inventory_module0_sqlite_atomic\requirements-ai.txt
+
+python .\techmindz_inventory_module0_sqlite_atomic\scripts\ai_probe.py --model bolt
+python .\techmindz_inventory_module0_sqlite_atomic\scripts\ai_probe.py
+```
+
+Commands were executed from the parent project directory with the virtual environment activated.
+
+## d) Manual checks and actual results
+
+**Development environment**
+
+- Python 3.12.12
+- Django 6.0.9
+- SQLite database initialized successfully.
+- All 18 initial Django migrations applied.
+- Development server and homepage worked.
+- Django admin login verified.
+- `.env` and `db.sqlite3` confirmed ignored and untracked.
+
+**AI feasibility — both-model run**
+
+| Measurement | Chronos-Bolt Tiny | Chronos-2 |
+|---|---|---|
+| Status | PASS | PASS |
+| Total execution | 7.30 seconds | 59.74 seconds |
+| Peak process memory | 363.5 MB | 811.8 MB |
+| Forecast computation | 0.01 seconds | 0.05 seconds |
+| First-day P10 | 7.37 | 8.85 |
+| First-day P50 | 8.42 | 9.03 |
+| First-day P90 | 9.39 | 9.15 |
+
+Both models received the same 90-day synthetic sales history and generated 30-day forecasts.
+
+Chronos-2's execution time included its initial model download. Total execution times are therefore not directly comparable.
+
+**Model recommendation:** Chronos-Bolt Tiny is the default because it completed the test successfully while using substantially less memory. Chronos-2 remains an alternative for later evaluation.
+
+## e) Automated tests and failure conditions
+
+**Result: 5 tests passed, 0 failures.**
+
+1. Homepage test — verifies successful response and expected content.
+2. Timezone test — verifies `Asia/Kolkata` and `USE_TZ = True`.
+3. SQLite test — verifies the configured database connection.
+4. Last-unit stock test — verifies that a second sequential deduction is refused.
+5. Transaction rollback test — verifies that stock is restored after a simulated failure.
+
+The stock tests use temporary models and tables, not production inventory models.
+
+## f) Assumptions, decisions and limitations
+
+**Confirmed decisions**
+
+- Python 3.12 and Django 6.0.9.
+- SQLite for local development instead of MySQL.
+- Database settings read from `.env`, allowing a later approved MySQL migration.
+- Chronos-Bolt Tiny as the default forecasting model.
+- Separate core and AI dependency files.
+- CPU-only forecasting without model training or paid APIs.
+
+**Limitations**
+
+- SQLite sequential tests do not prove safety or throughput under simultaneous requests. Concurrent writes may encounter database-lock errors.
+- Actual Product, Sale and StockMovement models and services remain unimplemented.
+- Forecast accuracy has not been established.
+- Formal backtesting, baseline comparison and P10–P90 interval coverage are deferred to Module 8.
+- AI dependencies are used by the standalone forecasting script, not required for the current Django application's startup.
+- Real inventory tests must be introduced when production models and stock services are implemented.
+- Final Git history security verification remains pending.
 
 ## g) Suggested Git commit message
-`M0: SQLite env config and atomic stock proof; AI feasibility`
 
-## h) Interview questions (one-line answers)
-1. **How do you prevent a sale from reducing stock below zero?** A conditional database update changes stock only when the available quantity is sufficient.
-2. **What if saving the sale fails after the deduction?** The transaction rolls back, restoring the previous quantity.
-3. **What did you verify about AI?** The local probe measures whether each pretrained model produces a valid forecast, and records time and memory; laptop results are still pending.
+`docs: finalize Module 0 verification and model recommendation`
+
+After completing all mandatory checks, tag the verified commit:
+
+`m0-complete`
+
+## h) Interview questions
+
+**1. How do you prevent stock from becoming negative?**
+
+Use an atomic conditional database update inside a transaction. The deduction succeeds only when sufficient stock exists.
+
+**2. What happens if a sale fails after stock is deducted?**
+
+The database transaction rolls back, restoring the original stock quantity.
+
+**3. Why did you select Chronos-Bolt Tiny?**
+
+Both pretrained models worked locally, but Chronos-Bolt Tiny used substantially less memory. Forecast accuracy will be evaluated later before any final production decision.
 
 ## Learn this
-- A **virtual environment** isolates Python packages for this project.
-- `.env` keeps local configuration separate from committed source code.
-- **SQLite** stores data in a local database file.
-- `transaction.atomic()` groups operations so failures can roll them back.
-- An **atomic conditional update** checks stock and deducts it in one database statement.
 
-**Three Django concepts:** settings (`config/settings.py`), test cases (`core/tests.py`), and ORM `filter().update()` (database operations through Python).
+- **Virtual environment:** Isolates project-specific Python packages.
+- **`.env`:** Stores local configuration separately from source code.
+- **SQLite:** Provides a file-based relational database.
+- **`transaction.atomic()`:** Ensures grouped database operations commit or roll back together.
+- **Conditional update:** Changes stock only when a database-level condition is satisfied.
+- **Forecast quantiles:** P10, P50 and P90 represent different points in a predictive distribution, not guaranteed minimum and maximum sales.
+
+**Three Django concepts:** Settings configuration, automated test cases, and ORM conditional updates.
