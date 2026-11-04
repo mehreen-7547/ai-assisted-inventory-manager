@@ -1,0 +1,4 @@
+# Install the CPU-only PyTorch wheel first (see README_M0.md).
+torch==2.10.0
+chronos-forecasting==2.3.2
+psutil==7.0.0

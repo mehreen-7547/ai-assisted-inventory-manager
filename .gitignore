@@ -1,0 +1,13 @@
+.venv/
+.env
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+.idea/
+.vscode/
+.pytest_cache/
+.model_cache/
+ai_probe_results*.json
+staticfiles/
+media/
