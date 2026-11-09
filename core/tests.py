@@ -9,10 +9,12 @@ from django.urls import reverse
 
 
 class ModuleZeroTests(TestCase):
-    def test_home_page_is_available(self):
+    def test_home_page_redirects_anonymous_users(self):
         response = self.client.get(reverse("home"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Module 0 setup is running")
+        self.assertRedirects(
+            response,
+            f'{reverse("login")}?next={reverse("home")}'
+        )
 
     def test_local_timezone(self):
         self.assertEqual(settings.TIME_ZONE, "Asia/Kolkata")
