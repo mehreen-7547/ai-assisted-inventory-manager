@@ -1,13 +1,35 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Inventory System | Module 0</title>
-</head>
-<body>
-    <h1>Inventory &amp; Demand Intelligence</h1>
-    <p>Module 0 setup is running.</p>
-    <p><a href="/admin/">Open Django admin</a></p>
-</body>
-</html>
+
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Inventory System{% endblock %}
+
+{% block content %}
+
+<h1>Inventory &amp; Demand Intelligence</h1>
+
+<!-- WELCOME -->
+<h2>Welcome, {{ request.user.username }}</h2>
+<p>Role: {{ request.user.get_role_display }}</p>
+
+<!-- DASHBOARD -->
+{% if request.user.role == 'admin' %}
+
+    <h3>Administrator Dashboard</h3>
+
+    {% if request.user.is_staff %}
+        <p>
+            <a href="/admin/">Open Django admin</a>
+        </p>
+    {% endif %}
+
+{% elif request.user.role == 'manager' %}
+
+    <h3>Inventory Manager Dashboard</h3>
+
+{% elif request.user.role == 'sales' %}
+
+    <h3>Sales Staff Dashboard</h3>
+
+{% endif %}
+
+{% endblock %}

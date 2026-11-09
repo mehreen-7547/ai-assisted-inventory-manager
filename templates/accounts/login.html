@@ -1,0 +1,56 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Login - Inventory System{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+
+        <h2 class="mb-4">Login</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="username" class="form-label">
+                    Username
+                </label>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       class="form-control"
+                       placeholder="Enter username"
+                       autocomplete="username"
+                       required>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">
+                    Password
+                </label>
+                <input type="password"
+                       id="password"
+                       name="password"
+                       class="form-control"
+                       placeholder="Enter password"
+                       autocomplete="current-password"
+                       required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">
+                Login
+            </button>
+        </form>
+
+        <p class="mt-3 text-center">
+            <a href="{% url 'password_reset' %}">
+                Forgot Password?
+            </a>
+        </p>
+
+    </div>
+</div>
+
+{% endblock %}

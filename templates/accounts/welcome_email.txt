@@ -1,0 +1,18 @@
+
+Hello {{ first_name }},
+
+Welcome to the Inventory System.
+
+Your employee account has been created.
+
+Username: {{ username }}
+
+To activate your account, set your password using the link below:
+
+{{ setup_link }}
+
+This link is temporary and can only be used once to set your password.
+
+If you were not expecting this email, please contact your administrator.
+
+Inventory System

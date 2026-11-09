@@ -1,0 +1,117 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Employees - Inventory System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'accounts/style.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">Manage Employees</h2>
+
+<div class="d-flex gap-2 mb-4">
+
+    <a href="{% url 'create_employee' %}"
+       class="btn btn-primary">
+        Add New Employee
+    </a>
+
+    {% if edit_mode %}
+
+        <a href="{% url 'employee_list' %}"
+           class="btn btn-outline-secondary">
+            Cancel Edit
+        </a>
+
+    {% else %}
+
+        <a href="{% url 'employee_list' %}?mode=edit"
+           class="btn btn-outline-primary">
+            Edit Employee
+        </a>
+
+    {% endif %}
+
+</div>
+
+{% if edit_mode %}
+    <p class="text-muted">
+        Select an employee to edit.
+    </p>
+{% endif %}
+
+<div class="table-responsive">
+
+    <table class="table table-bordered table-hover align-middle">
+
+        <thead class="table-light">
+            <tr>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for employee in employees %}
+
+            <tr {% if edit_mode %}class="selectable"{% endif %}>
+
+                <td>
+                    {% if edit_mode %}
+                        <a class="row-link"
+                           href="{% url 'edit_employee' employee.id %}">
+                            {{ employee.username }}
+                        </a>
+                    {% else %}
+                        {{ employee.username }}
+                    {% endif %}
+                </td>
+
+                <td>
+                    {{ employee.first_name }}
+                    {{ employee.last_name }}
+                </td>
+
+                <td>{{ employee.email }}</td>
+
+                <td>{{ employee.get_role_display }}</td>
+
+                <td>
+                    {% if employee.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="5" class="text-center">
+                    No employees found.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+<a href="{% url 'home' %}"
+   class="btn btn-outline-secondary mt-3">
+    Back to Home
+</a>
+
+{% endblock %}

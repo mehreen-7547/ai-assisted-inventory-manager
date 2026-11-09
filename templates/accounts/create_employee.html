@@ -1,0 +1,40 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Create Employee - Inventory System{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+
+        <h2 class="mb-3">Create Employee</h2>
+
+        <p class="text-muted mb-4">
+            Enter the employee details below.
+            A password setup link will be sent to their email.
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                {{ form.as_p }}
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    Create Employee
+                </button>
+
+                <a href="{% url 'employee_list' %}"
+                   class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

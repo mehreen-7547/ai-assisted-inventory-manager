@@ -1,0 +1,42 @@
+
+.selectable {
+    position: relative;
+    cursor: pointer;
+}
+
+.selectable:hover {
+    background-color: #eeeeee;
+}
+
+.row-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+
+.message {
+    padding: 10px;
+    margin: 15px 0;
+    border-radius: 5px;
+    border: 1px solid;
+}
+
+.message.success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.message.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.message.warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+
