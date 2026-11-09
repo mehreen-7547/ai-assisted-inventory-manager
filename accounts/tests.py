@@ -16,6 +16,9 @@ from urllib.parse import urlparse
 
 from .utils import generate_setup_link, send_welcome_email
 
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+
 
 class AuthenticationTests(TestCase):
 
@@ -520,6 +523,88 @@ class PasswordWorkflowTests(TestCase):
         self.assertEqual(mail.outbox[0].to, [self.user.email])
         self.assertIn(self.user.username, mail.outbox[0].body)
         self.assertIn('password-reset/confirm/', mail.outbox[0].body)
+
+    
+    def test_password_reset_confirmation_changes_password(self):
+        uid = urlsafe_base64_encode(force_bytes(self.user.pk))
+        token = default_token_generator.make_token(self.user)
+
+        reset_url = reverse(
+            'password_reset_confirm',
+            kwargs={'uidb64': uid, 'token': token}
+        )
+
+        response = self.client.get(reset_url)
+        self.assertRedirects(
+            response,
+            reverse(
+                'password_reset_confirm',
+                kwargs={'uidb64': uid, 'token': 'set-password'}
+            )
+        )
+
+        response = self.client.post(
+            reverse(
+                'password_reset_confirm',
+                kwargs={'uidb64': uid, 'token': 'set-password'}
+            ),
+            {
+                'new_password1': 'RecoveredPassword456!',
+                'new_password2': 'RecoveredPassword456!'
+            }
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('password_reset_complete')
+        )
+
+        self.user.refresh_from_db()
+        self.assertTrue(
+            self.user.check_password('RecoveredPassword456!')
+        )
+        self.assertFalse(
+            self.user.check_password('OldPassword123!')
+        )
+
+    def test_new_employee_can_set_first_password(self):
+        employee = CustomUser.objects.create_user(
+            username='newsetupuser',
+            email='newsetup@example.com',
+            role='sales'
+        )
+        employee.set_unusable_password()
+        employee.save()
+
+        response = self.client.get(reverse('login'))
+        setup_link = generate_setup_link(
+            response.wsgi_request, employee
+        )
+
+        path = urlparse(setup_link).path
+        response = self.client.get(path)
+
+        self.assertEqual(response.status_code, 302)
+
+        response = self.client.post(
+            response.url,
+            {
+                'new_password1': 'FirstPassword456!',
+                'new_password2': 'FirstPassword456!'
+            }
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('password_reset_complete')
+        )
+
+        employee.refresh_from_db()
+        self.assertTrue(employee.has_usable_password())
+        self.assertTrue(
+            employee.check_password('FirstPassword456!')
+        )
+
 
 
 
