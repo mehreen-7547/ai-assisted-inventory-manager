@@ -7,6 +7,15 @@ from .models import CustomUser
 from unittest.mock import patch
 from smtplib import SMTPException
 
+from django.core import mail
+from django.test import override_settings
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from urllib.parse import urlparse
+
+from .utils import generate_setup_link, send_welcome_email
+
 
 class AuthenticationTests(TestCase):
 
@@ -395,3 +404,122 @@ class EmployeePermissionValidationTests(TestCase):
 
         self.assertEqual(response.status_code, 405)
         mock_email.assert_not_called()
+
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend'
+)
+class PasswordWorkflowTests(TestCase):
+
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username='passworduser',
+            email='passworduser@example.com',
+            password='OldPassword123!',
+            role='sales'
+        )
+
+    def test_change_password_requires_login(self):
+        response = self.client.get(reverse('change_password'))
+        self.assertRedirects(
+            response,
+            reverse('login') + '?next=' + reverse('change_password')
+        )
+
+    def test_change_password_page_loads(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('change_password'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_valid_password_change_keeps_session(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('change_password'), {
+            'old_password': 'OldPassword123!',
+            'new_password1': 'NewPassword456!',
+            'new_password2': 'NewPassword456!'
+        })
+
+        self.assertRedirects(response, reverse('home'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NewPassword456!'))
+        self.assertEqual(
+            int(self.client.session['_auth_user_id']),
+            self.user.pk
+        )
+
+    def test_wrong_old_password_is_rejected(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('change_password'), {
+            'old_password': 'WrongPassword123!',
+            'new_password1': 'NewPassword456!',
+            'new_password2': 'NewPassword456!'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('OldPassword123!'))
+
+    def test_password_reset_page_loads(self):
+        response = self.client.get(reverse('password_reset'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_password_reset_sends_email(self):
+        response = self.client.post(reverse('password_reset'), {
+            'email': self.user.email
+        })
+
+        self.assertRedirects(response, reverse('password_reset_done'))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('password-reset/confirm/', mail.outbox[0].body)
+
+    def test_unknown_email_sends_nothing(self):
+        response = self.client.post(reverse('password_reset'), {
+            'email': 'unknown@example.com'
+        })
+
+        self.assertRedirects(response, reverse('password_reset_done'))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_inactive_user_gets_no_reset_email(self):
+        self.user.is_active = False
+        self.user.save()
+
+        response = self.client.post(reverse('password_reset'), {
+            'email': self.user.email
+        })
+
+        self.assertRedirects(response, reverse('password_reset_done'))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_setup_link_contains_valid_token(self):
+        response = self.client.get(reverse('login'))
+        link = generate_setup_link(response.wsgi_request, self.user)
+
+        path = urlparse(link).path
+        parts = path.strip('/').split('/')
+        uid = parts[-2]
+        token = parts[-1]
+
+        self.assertEqual(
+            force_str(urlsafe_base64_decode(uid)),
+            str(self.user.pk)
+        )
+        self.assertTrue(
+            default_token_generator.check_token(self.user, token)
+        )
+
+    def test_welcome_email_contains_setup_link(self):
+        response = self.client.get(reverse('login'))
+
+        send_welcome_email(response.wsgi_request, self.user)
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.user.email])
+        self.assertIn(self.user.username, mail.outbox[0].body)
+        self.assertIn('password-reset/confirm/', mail.outbox[0].body)
+
+
+
