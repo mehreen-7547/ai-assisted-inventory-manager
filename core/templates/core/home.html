@@ -51,6 +51,13 @@
     </p>
 
 
+    <p>
+        <a href="{% url 'sale_list' %}"
+        class="btn btn-primary">
+            Sales History
+        </a>
+    </p>
+
   
 
 {% elif request.user.role == 'sales' %}
@@ -70,6 +77,14 @@
         <a href="{% url 'sale_create' %}"
         class="btn btn-primary">
             Record Sale
+        </a>
+    </p>
+
+
+    <p>
+        <a href="{% url 'sale_list' %}"
+        class="btn btn-primary">
+            Sales History
         </a>
     </p>
 

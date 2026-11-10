@@ -10,6 +10,46 @@ from .forms import SaleForm
 from .models import Sale
 from .services import record_sale
 
+from django.core.paginator import Paginator
+from django.db.models import Q
+
+
+
+
+@login_required
+@role_required('sales', 'manager')
+def sale_list(request):
+    sales = Sale.objects.select_related(
+        'created_by'
+    ).order_by('-created_at', '-pk')
+
+    if request.user.role == 'sales':
+        sales = sales.filter(created_by=request.user)
+
+    search = request.GET.get('search', '').strip()
+    status = request.GET.get('status', '').strip()
+
+    if search:
+        sales = sales.filter(
+            Q(sale_number__icontains=search)
+            | Q(created_by__username__icontains=search)
+        )
+
+    if status in ['completed', 'voided']:
+        sales = sales.filter(status=status)
+    else:
+        status = ''
+
+    paginator = Paginator(sales, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'sales/sale_list.html', {
+        'page_obj': page_obj,
+        'search': search,
+        'status': status
+    })
+
+
 
 @login_required
 @role_required('sales', 'manager')

@@ -642,3 +642,179 @@ class SalePageTests(RecordSaleTests):
         )
 
         self.assertRedirects(response, reverse('home'))
+
+
+
+class SaleHistoryTests(TestCase):
+
+    def setUp(self):
+        User = get_user_model()
+
+        self.sales_user = User.objects.create_user(
+            username='history_sales',
+            email='history_sales@example.com',
+            password='TestPassword123!',
+            role='sales'
+        )
+
+        self.other_sales_user = User.objects.create_user(
+            username='history_other',
+            email='history_other@example.com',
+            password='TestPassword123!',
+            role='sales'
+        )
+
+        self.manager = User.objects.create_user(
+            username='history_manager',
+            email='history_manager@example.com',
+            password='TestPassword123!',
+            role='manager'
+        )
+
+        self.admin_user = User.objects.create_user(
+            username='history_admin',
+            email='history_admin@example.com',
+            password='TestPassword123!',
+            role='admin'
+        )
+
+        self.sale_one = Sale.objects.create(
+            sale_number='HISTORY-001',
+            submission_key=str(uuid4()),
+            created_by=self.sales_user,
+            total=Decimal('100.00')
+        )
+
+        self.sale_two = Sale.objects.create(
+            sale_number='HISTORY-002',
+            submission_key=str(uuid4()),
+            created_by=self.other_sales_user,
+            total=Decimal('200.00')
+    )
+
+
+    def test_anonymous_user_redirected(self):
+        response = self.client.get(reverse('sale_list'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_admin_cannot_access_history(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse('sale_list'))
+
+        self.assertRedirects(response, reverse('home'))
+
+    def test_sales_user_sees_only_own_sales(self):
+        self.client.force_login(self.sales_user)
+
+        response = self.client.get(reverse('sale_list'))
+
+        self.assertContains(response, 'HISTORY-001')
+        self.assertNotContains(response, 'HISTORY-002')
+
+    def test_manager_sees_all_sales(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse('sale_list'))
+
+        self.assertContains(response, 'HISTORY-001')
+        self.assertContains(response, 'HISTORY-002')
+
+    def test_search_by_sale_number(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse('sale_list'), {
+            'search': 'HISTORY-001'
+        })
+
+        self.assertContains(response, 'HISTORY-001')
+        self.assertNotContains(response, 'HISTORY-002')
+
+    def test_search_by_employee(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse('sale_list'), {
+            'search': 'history_other'
+        })
+
+        self.assertContains(response, 'HISTORY-002')
+        self.assertNotContains(response, 'HISTORY-001')
+
+    def test_filter_by_status(self):
+        self.sale_two.status = 'voided'
+        self.sale_two.save(update_fields=['status'])
+
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse('sale_list'), {
+            'status': 'voided'
+        })
+
+        self.assertContains(response, 'HISTORY-002')
+        self.assertNotContains(response, 'HISTORY-001')
+
+    def test_invalid_status_shows_all(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse('sale_list'), {
+            'status': 'invalid'
+        })
+
+        self.assertContains(response, 'HISTORY-001')
+        self.assertContains(response, 'HISTORY-002')
+
+    def test_sales_user_cannot_bypass_filter(self):
+        self.client.force_login(self.sales_user)
+
+        response = self.client.get(reverse('sale_list'), {
+            'search': 'HISTORY-002'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            len(response.context['page_obj'].object_list),
+            0
+        )
+        self.assertContains(response, 'No sales found.')
+
+    def test_pagination_limits_results(self):
+        for number in range(3, 15):
+            Sale.objects.create(
+                sale_number=f'HISTORY-{number:03}',
+                submission_key=str(uuid4()),
+                created_by=self.sales_user
+            )
+
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse('sale_list'))
+
+        self.assertEqual(
+            len(response.context['page_obj'].object_list),
+            10
+        )
+
+        self.assertTrue(
+            response.context['page_obj'].has_next()
+        )
+
+    def test_sales_user_cannot_view_other_sale_detail(self):
+        self.client.force_login(self.sales_user)
+
+        response = self.client.get(
+            reverse('sale_detail', args=[self.sale_two.pk])
+        )
+
+        self.assertRedirects(response, reverse('home'))
+
+    def test_manager_can_view_other_sale_detail(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(
+            reverse('sale_detail', args=[self.sale_two.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'HISTORY-002')

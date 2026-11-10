@@ -13,4 +13,10 @@ urlpatterns = [
         views.sale_detail,
         name='sale_detail'
     ),
+    path(
+        'sales/',
+        views.sale_list,
+        name='sale_list'
+    ),
+
 ]
