@@ -468,7 +468,7 @@ class ProductOpeningStockTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'name="Opening Stock"')
+        self.assertNotContains(response, 'name="opening_stock"')
 
     def test_sales_cannot_create_product(self):
         self.client.force_login(self.sales)
