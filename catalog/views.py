@@ -11,6 +11,8 @@ from django.shortcuts import get_object_or_404
 
 from django.views.decorators.http import require_POST
 
+from inventory.models import StockMovement
+
 
 
 
@@ -157,3 +159,25 @@ def toggle_product_status(request, product_id):
     product.save(update_fields=['is_active'])
 
     return redirect('product_list')
+
+
+
+@login_required
+@role_required('manager')
+def product_stock_history(request, product_id):
+    product = get_object_or_404(
+        Product,
+        pk=product_id
+    )
+
+    movements = StockMovement.objects.filter(
+        product=product
+    ).select_related(
+        'created_by'
+    ).order_by('-created_at', '-pk')
+
+    return render(request, 'catalog/product_stock_history.html', {
+        'product': product,
+        'movements': movements
+    })
+

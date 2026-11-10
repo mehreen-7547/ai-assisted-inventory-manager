@@ -41,5 +41,12 @@ urlpatterns = [
     ),
 
 
+    path(
+        'products/<int:product_id>/history/',
+        views.product_stock_history,
+        name='product_stock_history'
+    ),
+
+
 
 ]
