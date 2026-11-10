@@ -85,6 +85,7 @@ def toggle_supplier_status(request, supplier_id):
 
 
 
+
 @login_required
 @role_required('manager', 'sales')
 def product_list(request):
@@ -92,13 +93,20 @@ def product_list(request):
         'supplier'
     ).all().order_by('name')
 
+    mode = ''
+
+    if request.user.role == 'manager':
+        selected_mode = request.GET.get('mode', '')
+
+        if selected_mode in ['edit', 'history', 'adjust']:
+            mode = selected_mode
+
     return render(request, 'catalog/product_list.html', {
         'products': products,
-        'edit_mode': (
-            request.user.role == 'manager'
-            and request.GET.get('mode') == 'edit'
-        )
+        'mode': mode,
+        'edit_mode': mode == 'edit'
     })
+
 
 
 

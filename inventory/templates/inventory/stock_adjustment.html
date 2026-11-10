@@ -1,0 +1,40 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Stock Adjustment{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">Adjust Stock</h2>
+
+<p>
+    <strong>Product:</strong>
+    {{ product.name }} ({{ product.sku }})
+</p>
+
+<p>
+    <strong>Recorded Stock:</strong>
+    {{ product.on_hand }}
+</p>
+
+<p class="text-muted">
+    Enter the quantity physically counted.
+    The system will calculate the difference.
+</p>
+
+<form method="POST">
+    {% csrf_token %}
+
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-primary">
+        Save Adjustment
+    </button>
+
+    <a href="{% url 'product_list' %}"
+       class="btn btn-outline-secondary">
+        Cancel
+    </a>
+</form>
+
+{% endblock %}

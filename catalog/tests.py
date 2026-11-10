@@ -493,3 +493,133 @@ class ProductOpeningStockTests(TestCase):
         self.assertFalse(Product.objects.filter(sku='OPEN001').exists())
         self.assertEqual(StockMovement.objects.count(), 0)
 
+
+
+
+class ProductModeTests(TestCase):
+
+    def setUp(self):
+        self.manager = CustomUser.objects.create_user(
+            username='modemanager',
+            email='modemanager@example.com',
+            password='ManagerPass123!',
+            role='manager'
+        )
+
+        self.sales = CustomUser.objects.create_user(
+            username='modesales',
+            email='modesales@example.com',
+            password='SalesPass123!',
+            role='sales'
+        )
+
+        self.supplier = Supplier.objects.create(
+            name='Mode Test Supplier'
+        )
+
+        self.product = Product.objects.create(
+            sku='MODE001',
+            name='Mode Test Notebook',
+            category='Stationery',
+            supplier=self.supplier,
+            unit_price='50.00'
+        )
+
+        self.url = reverse('product_list')
+
+    def test_manager_normal_mode(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.context['mode'], '')
+        self.assertContains(response, 'Edit Product')
+        self.assertContains(response, 'Stock History')
+        self.assertContains(response, 'Adjust Stock')
+
+        self.assertNotContains(
+            response,
+            reverse('stock_adjustment', args=[self.product.pk])
+        )
+
+    def test_manager_edit_mode(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(self.url + '?mode=edit')
+
+        self.assertEqual(response.context['mode'], 'edit')
+        self.assertContains(
+            response,
+            reverse('product_edit', args=[self.product.pk])
+        )
+
+    def test_manager_history_mode(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(self.url + '?mode=history')
+
+        self.assertEqual(response.context['mode'], 'history')
+        self.assertContains(
+            response,
+            reverse('product_stock_history', args=[self.product.pk])
+        )
+
+    def test_manager_adjust_mode(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(self.url + '?mode=adjust')
+
+        self.assertEqual(response.context['mode'], 'adjust')
+        self.assertContains(
+            response,
+            reverse('stock_adjustment', args=[self.product.pk])
+        )
+
+    def test_inactive_product_cannot_be_selected_for_adjustment(self):
+        self.product.is_active = False
+        self.product.save()
+
+        self.client.force_login(self.manager)
+
+        response = self.client.get(self.url + '?mode=adjust')
+
+        self.assertNotContains(
+            response,
+            reverse('stock_adjustment', args=[self.product.pk])
+        )
+
+    def test_inactive_product_history_remains_available(self):
+        self.product.is_active = False
+        self.product.save()
+
+        self.client.force_login(self.manager)
+
+        response = self.client.get(self.url + '?mode=history')
+
+        self.assertContains(
+            response,
+            reverse('product_stock_history', args=[self.product.pk])
+        )
+
+    def test_sales_cannot_activate_manager_modes(self):
+        self.client.force_login(self.sales)
+
+        for selected_mode in ['edit', 'history', 'adjust']:
+            response = self.client.get(
+                self.url + '?mode=' + selected_mode
+            )
+
+            self.assertEqual(response.context['mode'], '')
+            self.assertNotContains(
+                response,
+                reverse('stock_adjustment', args=[self.product.pk])
+            )
+
+    def test_unknown_mode_is_ignored(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(self.url + '?mode=unknown')
+
+        self.assertEqual(response.context['mode'], '')
+
+

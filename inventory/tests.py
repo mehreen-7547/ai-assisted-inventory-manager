@@ -224,3 +224,212 @@ class StockHistoryTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+
+
+class StockAdjustmentTests(TestCase):
+
+    def setUp(self):
+        self.manager = get_user_model().objects.create_user(
+            username='adjustmanager',
+            email='adjustmanager@example.com',
+            password='TestPassword123!',
+            role='manager'
+        )
+
+        self.sales = get_user_model().objects.create_user(
+            username='adjustsales',
+            email='adjustsales@example.com',
+            password='TestPassword123!',
+            role='sales'
+        )
+
+        self.supplier = Supplier.objects.create(
+            name='Adjustment Supplier'
+        )
+
+        self.product = Product.objects.create(
+            sku='ADJUST001',
+            name='Adjustment Notebook',
+            category='Stationery',
+            supplier=self.supplier,
+            unit_price='50.00'
+        )
+
+        change_stock(
+            self.product.pk, 25, 'opening',
+            'Initial stock', self.manager
+        )
+
+        self.url = reverse(
+            'stock_adjustment',
+            args=[self.product.pk]
+        )
+
+    def test_manager_can_open_adjustment_page(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Adjustment Notebook')
+        self.assertContains(response, 'Recorded Stock')
+
+    def test_manager_can_reduce_stock(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.post(self.url, {
+            'expected_balance': 25,
+            'counted_quantity': 23,
+            'reason': 'Two damaged notebooks'
+        })
+
+        self.assertRedirects(
+            response,
+            reverse(
+                'product_stock_history',
+                args=[self.product.pk]
+            )
+        )
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.on_hand, 23)
+
+        movement = StockMovement.objects.filter(
+            product=self.product,
+            movement_type='adjustment'
+        ).get()
+
+        self.assertEqual(movement.quantity_delta, -2)
+        self.assertEqual(movement.balance_before, 25)
+        self.assertEqual(movement.balance_after, 23)
+        self.assertEqual(
+            movement.reason,
+            'Two damaged notebooks'
+        )
+        self.assertEqual(movement.created_by, self.manager)
+
+    def test_manager_can_increase_stock(self):
+        self.client.force_login(self.manager)
+
+        self.client.post(self.url, {
+            'expected_balance': 25,
+            'counted_quantity': 28,
+            'reason': 'Three extra notebooks found'
+        })
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.on_hand, 28)
+
+        movement = StockMovement.objects.filter(
+            movement_type='adjustment'
+        ).get()
+
+        self.assertEqual(movement.quantity_delta, 3)
+
+    def test_stale_balance_is_rejected(self):
+        self.client.force_login(self.manager)
+
+        change_stock(
+            self.product.pk, -1, 'sale',
+            'Another transaction', self.manager
+        )
+
+        response = self.client.post(self.url, {
+            'expected_balance': 25,
+            'counted_quantity': 23,
+            'reason': 'Physical count'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            'Stock changed since the page was opened'
+        )
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.on_hand, 24)
+
+        self.assertFalse(
+            StockMovement.objects.filter(
+                movement_type='adjustment'
+            ).exists()
+        )
+
+    def test_zero_difference_is_rejected(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.post(self.url, {
+            'expected_balance': 25,
+            'counted_quantity': 25,
+            'reason': 'Physical count'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            StockMovement.objects.filter(
+                movement_type='adjustment'
+            ).exists()
+        )
+
+    def test_negative_count_is_rejected(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.post(self.url, {
+            'expected_balance': 25,
+            'counted_quantity': -2,
+            'reason': 'Physical count'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.on_hand, 25)
+
+    def test_missing_reason_is_rejected(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.post(self.url, {
+            'expected_balance': 25,
+            'counted_quantity': 23,
+            'reason': ''
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.on_hand, 25)
+
+    def test_sales_cannot_adjust_stock(self):
+        self.client.force_login(self.sales)
+
+        response = self.client.post(self.url, {
+            'expected_balance': 25,
+            'counted_quantity': 23,
+            'reason': 'Physical count'
+        })
+
+        self.assertRedirects(response, reverse('home'))
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.on_hand, 25)
+
+    def test_anonymous_user_cannot_adjust_stock(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_inactive_product_cannot_be_adjusted(self):
+        self.product.is_active = False
+        self.product.save(update_fields=['is_active'])
+
+        self.client.force_login(self.manager)
+
+        response = self.client.post(self.url, {
+            'expected_balance': 25,
+            'counted_quantity': 23,
+            'reason': 'Physical count'
+        })
+
+        self.assertRedirects(response, reverse('product_list'))
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.on_hand, 25)

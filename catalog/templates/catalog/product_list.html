@@ -12,8 +12,6 @@
 
 <h2 class="mb-4">Products</h2>
 
-
-
 {% if request.user.role == 'manager' %}
 
 <div class="supplier-actions">
@@ -23,10 +21,10 @@
         Add Product
     </a>
 
-    {% if edit_mode %}
+    {% if mode == 'edit' %}
         <a href="{% url 'product_list' %}"
-           class="btn btn-outline-secondary">
-            Cancel Edit
+           class="btn btn-primary">
+            Edit Product
         </a>
     {% else %}
         <a href="{% url 'product_list' %}?mode=edit"
@@ -35,17 +33,54 @@
         </a>
     {% endif %}
 
+    {% if mode == 'history' %}
+        <a href="{% url 'product_list' %}"
+           class="btn btn-primary">
+            Stock History
+        </a>
+    {% else %}
+        <a href="{% url 'product_list' %}?mode=history"
+           class="btn btn-outline-primary">
+            Stock History
+        </a>
+    {% endif %}
+
+    {% if mode == 'adjust' %}
+        <a href="{% url 'product_list' %}"
+           class="btn btn-primary">
+            Adjust Stock
+        </a>
+    {% else %}
+        <a href="{% url 'product_list' %}?mode=adjust"
+           class="btn btn-outline-primary">
+            Adjust Stock
+        </a>
+    {% endif %}
+
 </div>
 
-{% if edit_mode %}
+{% if mode == 'edit' %}
     <p class="text-muted">
         Select a product to edit.
     </p>
+{% elif mode == 'history' %}
+    <p class="text-muted">
+        Select a product to view its stock history.
+    </p>
+{% elif mode == 'adjust' %}
+    <p class="text-muted">
+        Select an active product to adjust its stock.
+    </p>
+{% endif %}
+
+{% if mode %}
+    <a href="{% url 'product_list' %}"
+       class="btn btn-outline-secondary mb-3">
+        Cancel
+    </a>
 {% endif %}
 
 {% endif %}
-
-
 
 <div class="table-responsive">
     <table class="supplier-table">
@@ -66,19 +101,37 @@
 
         <tbody>
             {% for product in products %}
-            
-            <tr {% if edit_mode %}class="selectable"{% endif %}>
+
+            <tr {% if mode %}class="selectable"{% endif %}>
 
                 <td>{{ product.sku }}</td>
 
                 <td>
-                    {% if edit_mode %}
+                    {% if mode == 'edit' %}
+
                         <a class="row-link"
-                        href="{% url 'product_edit' product.id %}">
+                           href="{% url 'product_edit' product.id %}">
                             {{ product.name }}
                         </a>
+
+                    {% elif mode == 'history' %}
+
+                        <a class="row-link"
+                           href="{% url 'product_stock_history' product.id %}">
+                            {{ product.name }}
+                        </a>
+
+                    {% elif mode == 'adjust' and product.is_active %}
+
+                        <a class="row-link"
+                           href="{% url 'stock_adjustment' product.id %}">
+                            {{ product.name }}
+                        </a>
+
                     {% else %}
+
                         {{ product.name }}
+
                     {% endif %}
                 </td>
 
