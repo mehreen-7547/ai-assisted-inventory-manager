@@ -1,0 +1,57 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Record Sale{% endblock %}
+
+{% block content %}
+
+<h1>Record New Sale</h1>
+
+<p>Select up to five products and enter their quantities.</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    <input
+        type="hidden"
+        name="submission_key"
+        value="{{ submission_key }}"
+    >
+
+    {{ form.non_field_errors }}
+
+    {% for field in form %}
+        {% if field.name == 'discount_type' or field.name == 'discount_value' %}
+        {% else %}
+            <p>
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.errors }}
+            </p>
+        {% endif %}
+    {% endfor %}
+
+    <h3>Discount</h3>
+
+    <p>
+        {{ form.discount_type.label_tag }}
+        {{ form.discount_type }}
+        {{ form.discount_type.errors }}
+    </p>
+
+    <p>
+        {{ form.discount_value.label_tag }}
+        {{ form.discount_value }}
+        {{ form.discount_value.errors }}
+    </p>
+
+    <button type="submit" class="btn btn-primary">
+        Record Sale
+    </button>
+
+    <a href="{% url 'home' %}" class="btn">
+        Cancel
+    </a>
+</form>
+
+{% endblock %}

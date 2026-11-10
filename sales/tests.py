@@ -522,3 +522,123 @@ class RecordSaleTests(TestCase):
             ).count(),
             0
         )
+
+
+
+from django.urls import reverse
+from .forms import SaleForm
+
+
+class SalePageTests(RecordSaleTests):
+
+    def test_sale_form_requires_product(self):
+        form = SaleForm(data={
+            'discount_type': 'none',
+            'discount_value': '0'
+        })
+
+        self.assertFalse(form.is_valid())
+
+    def test_sale_form_rejects_duplicate_products(self):
+        form = SaleForm(data={
+            'discount_type': 'none',
+            'discount_value': '0',
+            'product_1': self.product.pk,
+            'quantity_1': 1,
+            'product_2': self.product.pk,
+            'quantity_2': 2
+        })
+
+        self.assertFalse(form.is_valid())
+
+    def test_sales_user_can_open_form(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('sale_create'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Record New Sale')
+
+    def test_post_records_sale(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('sale_create'))
+        key = response.context['submission_key']
+
+        response = self.client.post(reverse('sale_create'), {
+            'submission_key': key,
+            'discount_type': 'none',
+            'discount_value': '0',
+            'product_1': self.product.pk,
+            'quantity_1': 2
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Sale.objects.count(), 1)
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.on_hand, 8)
+
+    def test_duplicate_post_does_not_deduct_twice(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('sale_create'))
+        key = response.context['submission_key']
+
+        data = {
+            'submission_key': key,
+            'discount_type': 'none',
+            'discount_value': '0',
+            'product_1': self.product.pk,
+            'quantity_1': 2
+        }
+
+        self.client.post(reverse('sale_create'), data)
+        self.client.post(reverse('sale_create'), data)
+
+        self.assertEqual(Sale.objects.count(), 1)
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.on_hand, 8)
+
+    def test_anonymous_user_cannot_open_sale_form(self):
+        response = self.client.get(reverse('sale_create'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_admin_role_cannot_open_sale_form(self):
+        User = get_user_model()
+
+        admin_user = User.objects.create_user(
+            username='sale_page_admin',
+            email='sale_page_admin@example.com',
+            password='TestPassword123!',
+            role='admin'
+        )
+
+        self.client.force_login(admin_user)
+
+        response = self.client.get(reverse('sale_create'))
+
+        self.assertRedirects(response, reverse('home'))
+
+    def test_sales_user_cannot_view_other_users_sale(self):
+        sale = self.make_sale()
+
+        User = get_user_model()
+
+        other_user = User.objects.create_user(
+            username='other_page_sales',
+            email='other_page_sales@example.com',
+            password='TestPassword123!',
+            role='sales'
+        )
+
+        self.client.force_login(other_user)
+
+        response = self.client.get(
+            reverse('sale_detail', args=[sale.pk])
+        )
+
+        self.assertRedirects(response, reverse('home'))

@@ -1,0 +1,53 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Sale Details{% endblock %}
+
+{% block content %}
+
+<h1>Sale Recorded</h1>
+
+<p><strong>Sale Number:</strong> {{ sale.sale_number }}</p>
+<p><strong>Date:</strong> {{ sale.created_at }}</p>
+<p><strong>Recorded By:</strong> {{ sale.created_by.username }}</p>
+<p><strong>Status:</strong> {{ sale.get_status_display }}</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Line Total</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for line in lines %}
+        <tr>
+            <td>{{ line.product_name }}</td>
+            <td>{{ line.quantity }}</td>
+            <td>{{ line.unit_price }}</td>
+            <td>{{ line.line_total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p><strong>Subtotal:</strong> {{ sale.subtotal }}</p>
+<p>
+    <strong>Discount:</strong>
+    {{ sale.get_discount_type_display }}
+    ({{ sale.discount_value }})
+</p>
+<p><strong>Total:</strong> {{ sale.total }}</p>
+
+<a href="{% url 'sale_create' %}" class="btn btn-primary">
+    Record Another Sale
+</a>
+
+<a href="{% url 'home' %}" class="btn">
+    Back to Dashboard
+</a>
+
+{% endblock %}
