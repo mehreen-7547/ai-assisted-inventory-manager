@@ -1,40 +1,112 @@
 
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Suppliers - Inventory System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'catalog/style.css' %}">
+{% endblock %}
 
 {% block content %}
-<h2>Suppliers</h2>
 
-<p>
-    <a href="{% url 'supplier_create' %}">Add Supplier</a>
-</p>
+<h2 class="mb-4">Manage Suppliers</h2>
 
-<table border="1">
-    <tr>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>Email</th>
-        <th>Address</th>
-        <th>Status</th>
-    </tr>
+<div class="supplier-actions">
 
-    {% for supplier in suppliers %}
-    <tr>
-        <td>{{ supplier.name }}</td>
-        <td>{{ supplier.phone }}</td>
-        <td>{{ supplier.email }}</td>
-        <td>{{ supplier.address }}</td>
-        <td>
-            {% if supplier.is_active %}
-                Active
-            {% else %}
-                Inactive
-            {% endif %}
-        </td>
-    </tr>
-    {% empty %}
-    <tr>
-        <td colspan="5">No suppliers found.</td>
-    </tr>
-    {% endfor %}
-</table>
+    <a href="{% url 'supplier_create' %}"
+       class="btn btn-primary">
+        Add Supplier
+    </a>
+
+    {% if edit_mode %}
+
+        <a href="{% url 'supplier_list' %}"
+           class="btn btn-outline-secondary">
+            Cancel Edit
+        </a>
+
+    {% else %}
+
+        <a href="{% url 'supplier_list' %}?mode=edit"
+           class="btn btn-outline-primary">
+            Edit Supplier
+        </a>
+
+    {% endif %}
+
+</div>
+
+{% if edit_mode %}
+    <p class="text-muted">
+        Select a supplier to edit.
+    </p>
+{% endif %}
+
+<div class="table-responsive">
+
+    <table class="supplier-table">
+
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for supplier in suppliers %}
+
+            <tr {% if edit_mode %}class="selectable"{% endif %}>
+
+                <td>
+                    {% if edit_mode %}
+                        <a class="row-link"
+                           href="{% url 'supplier_edit' supplier.id %}">
+                            {{ supplier.name }}
+                        </a>
+                    {% else %}
+                        {{ supplier.name }}
+                    {% endif %}
+                </td>
+
+                <td>{{ supplier.phone }}</td>
+                <td>{{ supplier.email }}</td>
+                <td>{{ supplier.address }}</td>
+
+                <td>
+                    {% if supplier.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="5" class="text-center">
+                    No suppliers found.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+<a href="{% url 'home' %}"
+   class="btn btn-outline-secondary mt-3">
+    Back to Home
+</a>
+
 {% endblock %}
