@@ -139,3 +139,21 @@ def product_edit(request, product_id):
     return render(request, 'catalog/product_form.html', {
         'form': form
     })
+
+
+
+
+@login_required
+@role_required('manager')
+@require_POST
+def toggle_product_status(request, product_id):
+
+    product = get_object_or_404(
+        Product,
+        id=product_id
+    )
+
+    product.is_active = not product.is_active
+    product.save(update_fields=['is_active'])
+
+    return redirect('product_list')

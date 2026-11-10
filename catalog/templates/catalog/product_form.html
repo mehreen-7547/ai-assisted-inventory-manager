@@ -32,4 +32,52 @@
     </a>
 </form>
 
+
+{% if form.instance.pk %}
+
+<hr>
+
+<h5 class="mt-4">Product Status</h5>
+
+<p>
+    Current status:
+
+    {% if form.instance.is_active %}
+        <span class="badge bg-success">
+            Active
+        </span>
+    {% else %}
+        <span class="badge bg-secondary">
+            Inactive
+        </span>
+    {% endif %}
+</p>
+
+<form method="POST"
+      action="{% url 'toggle_product_status' form.instance.pk %}"
+      class="mb-4">
+
+    {% csrf_token %}
+
+    {% if form.instance.is_active %}
+
+        <button type="submit"
+                class="btn btn-outline-danger">
+            Deactivate Product
+        </button>
+
+    {% else %}
+
+        <button type="submit"
+                class="btn btn-outline-success">
+            Reactivate Product
+        </button>
+
+    {% endif %}
+
+</form>
+
+{% endif %}
+
+
 {% endblock %}

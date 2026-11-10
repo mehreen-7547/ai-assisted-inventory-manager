@@ -255,3 +255,107 @@ class ProductListTests(TestCase):
             self.supplier.name
         )
 
+    
+    def test_manager_can_deactivate_product(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.post(
+            reverse(
+                'toggle_product_status',
+                args=[self.product.id]
+            )
+        )
+
+        self.product.refresh_from_db()
+
+        self.assertFalse(self.product.is_active)
+        self.assertEqual(self.product.on_hand, 0)
+        self.assertRedirects(
+            response,
+            reverse('product_list')
+        )
+
+    def test_manager_can_reactivate_product(self):
+        self.product.is_active = False
+        self.product.save()
+
+        self.client.force_login(self.manager)
+
+        response = self.client.post(
+            reverse(
+                'toggle_product_status',
+                args=[self.product.id]
+            )
+        )
+
+        self.product.refresh_from_db()
+
+        self.assertTrue(self.product.is_active)
+        self.assertRedirects(
+            response,
+            reverse('product_list')
+        )
+
+    def test_get_cannot_change_product_status(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(
+            reverse(
+                'toggle_product_status',
+                args=[self.product.id]
+            )
+        )
+
+        self.product.refresh_from_db()
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(self.product.is_active)
+
+    def test_sales_cannot_change_product_status(self):
+        self.client.force_login(self.sales)
+
+        response = self.client.post(
+            reverse(
+                'toggle_product_status',
+                args=[self.product.id]
+            )
+        )
+
+        self.product.refresh_from_db()
+
+        self.assertTrue(self.product.is_active)
+        self.assertRedirects(
+            response,
+            reverse('home')
+        )
+
+    def test_anonymous_cannot_change_product_status(self):
+        response = self.client.post(
+            reverse(
+                'toggle_product_status',
+                args=[self.product.id]
+            )
+        )
+
+        self.product.refresh_from_db()
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(self.product.is_active)
+
+    def test_deactivated_product_remains_in_database(self):
+        self.client.force_login(self.manager)
+
+        self.client.post(
+            reverse(
+                'toggle_product_status',
+                args=[self.product.id]
+            )
+        )
+
+        self.assertTrue(
+            Product.objects.filter(
+                id=self.product.id
+            ).exists()
+        )
+
+

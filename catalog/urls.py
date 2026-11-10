@@ -34,5 +34,12 @@ urlpatterns = [
     ),
 
 
+    path(
+        'products/<int:product_id>/status/',
+        views.toggle_product_status,
+        name='toggle_product_status'
+    ),
+
+
 
 ]
