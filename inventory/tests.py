@@ -8,6 +8,12 @@ from .services import change_stock
 
 from django.urls import reverse
 
+from io import StringIO
+
+from django.core.management import call_command
+from django.core.management.base import CommandError
+
+
 class StockServiceTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
@@ -433,3 +439,192 @@ class StockAdjustmentTests(TestCase):
 
         self.product.refresh_from_db()
         self.assertEqual(self.product.on_hand, 25)
+
+
+
+
+class StockLedgerIntegrityTests(TestCase):
+
+    def setUp(self):
+        self.manager = get_user_model().objects.create_user(
+            username='ledgermanager',
+            email='ledgermanager@example.com',
+            password='TestPassword123!',
+            role='manager'
+        )
+
+        self.supplier = Supplier.objects.create(
+            name='Ledger Supplier'
+        )
+
+        self.product = Product.objects.create(
+            sku='LEDGER001',
+            name='Ledger Notebook',
+            category='Stationery',
+            supplier=self.supplier,
+            unit_price='50.00'
+        )
+
+    def test_movement_balances_are_continuous(self):
+        change_stock(
+            self.product.pk, 25, 'opening',
+            'Opening stock', self.manager
+        )
+
+        change_stock(
+            self.product.pk, -2, 'adjustment',
+            'Two damaged items', self.manager
+        )
+
+        change_stock(
+            self.product.pk, 3, 'adjustment',
+            'Three extra items', self.manager
+        )
+
+        movements = StockMovement.objects.filter(
+            product=self.product
+        ).order_by('created_at', 'pk')
+
+        previous_balance = 0
+
+        for movement in movements:
+            self.assertEqual(
+                movement.balance_before,
+                previous_balance
+            )
+
+            self.assertEqual(
+                movement.balance_after,
+                movement.balance_before + movement.quantity_delta
+            )
+
+            previous_balance = movement.balance_after
+
+        self.assertEqual(movements.count(), 3)
+
+    def test_latest_movement_matches_product_stock(self):
+        change_stock(
+            self.product.pk, 25, 'opening',
+            'Opening stock', self.manager
+        )
+
+        change_stock(
+            self.product.pk, -2, 'adjustment',
+            'Physical count', self.manager
+        )
+
+        latest_movement = StockMovement.objects.filter(
+            product=self.product
+        ).order_by('-created_at', '-pk').first()
+
+        self.product.refresh_from_db()
+
+        self.assertEqual(
+            latest_movement.balance_after,
+            self.product.on_hand
+        )
+
+        self.assertEqual(self.product.on_hand, 23)
+
+
+class StockLedgerCommandTests(TestCase):
+
+    def setUp(self):
+        self.manager = get_user_model().objects.create_user(
+            username='ledgercheckmanager',
+            email='ledgercheck@example.com',
+            password='TestPassword123!',
+            role='manager'
+        )
+
+        self.supplier = Supplier.objects.create(
+            name='Ledger Check Supplier'
+        )
+
+        self.product = Product.objects.create(
+            sku='CHECK001',
+            name='Ledger Check Product',
+            category='General',
+            supplier=self.supplier,
+            unit_price='100.00'
+        )
+
+    def test_valid_ledger_passes(self):
+        # Correct stock movements must pass the check.
+        change_stock(
+            self.product.pk, 10, 'opening',
+            'Initial stock', self.manager
+        )
+
+        change_stock(
+            self.product.pk, -3, 'adjustment',
+            'Physical count', self.manager
+        )
+
+        output = StringIO()
+
+        call_command('check_ledger', stdout=output)
+
+        self.assertIn(
+            'Stock ledger check passed',
+            output.getvalue()
+        )
+
+    def test_incorrect_product_balance_fails(self):
+        # Product stock must match its movement history.
+        change_stock(
+            self.product.pk, 10, 'opening',
+            'Initial stock', self.manager
+        )
+
+        Product.objects.filter(
+            pk=self.product.pk
+        ).update(on_hand=15)
+
+        with self.assertRaises(CommandError):
+            call_command(
+                'check_ledger',
+                stdout=StringIO(),
+                stderr=StringIO()
+            )
+
+    def test_broken_movement_arithmetic_fails(self):
+        # A movement must contain correct balance arithmetic.
+        movement = change_stock(
+            self.product.pk, 10, 'opening',
+            'Initial stock', self.manager
+        )
+
+        StockMovement.objects.filter(
+            pk=movement.pk
+        ).update(balance_after=12)
+
+        with self.assertRaises(CommandError):
+            call_command(
+                'check_ledger',
+                stdout=StringIO(),
+                stderr=StringIO()
+            )
+
+    def test_broken_movement_continuity_fails(self):
+        # Each movement must start at the previous balance.
+        change_stock(
+            self.product.pk, 10, 'opening',
+            'Initial stock', self.manager
+        )
+
+        movement = change_stock(
+            self.product.pk, -2, 'adjustment',
+            'Damaged items', self.manager
+        )
+
+        StockMovement.objects.filter(
+            pk=movement.pk
+        ).update(balance_before=9)
+
+        with self.assertRaises(CommandError):
+            call_command(
+                'check_ledger',
+                stdout=StringIO(),
+                stderr=StringIO()
+            )
