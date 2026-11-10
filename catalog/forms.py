@@ -8,7 +8,14 @@ class SupplierForm(forms.ModelForm):
         fields = ['name', 'phone', 'email', 'address']
 
 
+
 class ProductForm(forms.ModelForm):
+    opening_stock = forms.IntegerField(
+        min_value=0,
+        required=True,
+        label='Opening Stock',
+        help_text='Initial quantity available when registering the product.'
+    )
 
     class Meta:
         model = Product
@@ -22,7 +29,6 @@ class ProductForm(forms.ModelForm):
             'safety_stock'
         ]
 
-    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -38,7 +44,10 @@ class ProductForm(forms.ModelForm):
                 )
             )
 
+            self.fields.pop('opening_stock')
+
         self.fields['supplier'].queryset = (
             suppliers.distinct().order_by('name')
         )
+
 

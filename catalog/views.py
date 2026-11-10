@@ -13,6 +13,9 @@ from django.views.decorators.http import require_POST
 
 from inventory.models import StockMovement
 
+from django.db import transaction
+from inventory.services import change_stock
+
 
 
 
@@ -100,6 +103,7 @@ def product_list(request):
 
 
 
+
 @login_required
 @role_required('manager')
 def product_create(request):
@@ -107,7 +111,20 @@ def product_create(request):
         form = ProductForm(request.POST)
 
         if form.is_valid():
-            form.save()
+            opening_stock = form.cleaned_data['opening_stock']
+
+            with transaction.atomic():
+                product = form.save()
+
+                if opening_stock > 0:
+                    change_stock(
+                        product_id=product.pk,
+                        delta=opening_stock,
+                        movement_type='opening',
+                        reason='Initial stock at product registration',
+                        user=request.user
+                    )
+
             return redirect('product_list')
     else:
         form = ProductForm()
@@ -115,6 +132,7 @@ def product_create(request):
     return render(request, 'catalog/product_form.html', {
         'form': form
     })
+
 
 
 

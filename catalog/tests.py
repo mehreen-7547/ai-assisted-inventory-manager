@@ -5,6 +5,9 @@ from django.urls import reverse
 from accounts.models import CustomUser
 from .models import Supplier, Product
 
+from unittest.mock import patch
+from inventory.models import StockMovement
+
 
 class SupplierStatusTests(TestCase):
 
@@ -358,4 +361,135 @@ class ProductListTests(TestCase):
             ).exists()
         )
 
+
+
+class ProductOpeningStockTests(TestCase):
+
+    def setUp(self):
+        self.manager = CustomUser.objects.create_user(
+            username='openingmanager',
+            email='openingmanager@example.com',
+            password='ManagerPass123!',
+            role='manager'
+        )
+
+        self.sales = CustomUser.objects.create_user(
+            username='openingsales',
+            email='openingsales@example.com',
+            password='SalesPass123!',
+            role='sales'
+        )
+
+        self.supplier = Supplier.objects.create(
+            name='Opening Stock Supplier'
+        )
+
+        self.url = reverse('product_create')
+
+        self.data = {
+            'sku': 'OPEN001',
+            'name': 'Opening Product',
+            'category': 'Stationery',
+            'supplier': self.supplier.pk,
+            'unit_price': '50.00',
+            'lead_time_days': 3,
+            'safety_stock': 5,
+            'opening_stock': 25
+        }
+
+    def test_create_product_with_opening_stock(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.post(self.url, self.data)
+
+        self.assertRedirects(response, reverse('product_list'))
+
+        product = Product.objects.get(sku='OPEN001')
+        self.assertEqual(product.on_hand, 25)
+
+        movement = StockMovement.objects.get(product=product)
+
+        self.assertEqual(movement.movement_type, 'opening')
+        self.assertEqual(movement.quantity_delta, 25)
+        self.assertEqual(movement.balance_before, 0)
+        self.assertEqual(movement.balance_after, 25)
+        self.assertEqual(movement.created_by, self.manager)
+
+    def test_zero_opening_stock(self):
+        self.client.force_login(self.manager)
+
+        data = self.data.copy()
+        data['opening_stock'] = 0
+
+        self.client.post(self.url, data)
+
+        product = Product.objects.get(sku='OPEN001')
+
+        self.assertEqual(product.on_hand, 0)
+        self.assertFalse(
+            StockMovement.objects.filter(product=product).exists()
+        )
+
+    def test_negative_opening_stock_rejected(self):
+        self.client.force_login(self.manager)
+
+        data = self.data.copy()
+        data['opening_stock'] = -5
+
+        response = self.client.post(self.url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Product.objects.filter(sku='OPEN001').exists())
+
+    def test_missing_opening_stock_rejected(self):
+        self.client.force_login(self.manager)
+
+        data = self.data.copy()
+        data.pop('opening_stock')
+
+        response = self.client.post(self.url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Product.objects.filter(sku='OPEN001').exists())
+
+    def test_opening_stock_not_on_edit_form(self):
+        self.client.force_login(self.manager)
+
+        product = Product.objects.create(
+            sku='EDIT001',
+            name='Edit Product',
+            category='Stationery',
+            supplier=self.supplier,
+            unit_price='50.00'
+        )
+
+        response = self.client.get(
+            reverse('product_edit', args=[product.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'name="Opening Stock"')
+
+    def test_sales_cannot_create_product(self):
+        self.client.force_login(self.sales)
+
+        response = self.client.post(self.url, self.data)
+
+        self.assertRedirects(response, reverse('home'))
+        self.assertFalse(Product.objects.filter(sku='OPEN001').exists())
+
+    def test_failed_stock_record_rolls_back_product(self):
+        self.client.force_login(self.manager)
+
+        with patch(
+            'catalog.views.change_stock',
+            side_effect=ValueError('Simulated stock failure')
+        ):
+            with self.assertRaisesMessage(
+                ValueError, 'Simulated stock failure'
+            ):
+                self.client.post(self.url, self.data)
+
+        self.assertFalse(Product.objects.filter(sku='OPEN001').exists())
+        self.assertEqual(StockMovement.objects.count(), 0)
 
