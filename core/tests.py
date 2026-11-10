@@ -8,6 +8,7 @@ from django.test.utils import isolate_apps
 from django.urls import reverse
 
 
+
 class ModuleZeroTests(TestCase):
     def test_home_page_redirects_anonymous_users(self):
         response = self.client.get(reverse("home"))

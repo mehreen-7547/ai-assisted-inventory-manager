@@ -33,11 +33,29 @@
             Manage Suppliers
         </a>
     </p>
+
+
+    <p>
+        <a href="{% url 'product_list' %}"
+        class="btn btn-primary">
+            Manage Products
+        </a>
+    </p>
+
   
 
 {% elif request.user.role == 'sales' %}
 
     <h3>Sales Staff Dashboard</h3>
+
+
+    <p>
+        <a href="{% url 'product_list' %}"
+        class="btn btn-primary">
+            View Products
+        </a>
+    </p>
+
 
 {% endif %}
 
