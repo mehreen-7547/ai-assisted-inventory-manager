@@ -26,6 +26,15 @@
 
     <h3>Inventory Manager Dashboard</h3>
 
+
+    <p>
+        <a href="{% url 'supplier_list' %}"
+        class="btn btn-primary">
+            Manage Suppliers
+        </a>
+    </p>
+  
+
 {% elif request.user.role == 'sales' %}
 
     <h3>Sales Staff Dashboard</h3>

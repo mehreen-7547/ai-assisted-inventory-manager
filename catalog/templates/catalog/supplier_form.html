@@ -30,6 +30,45 @@
     {% endif %}
 </form>
 
+
+{% if form.instance.pk %}
+
+    <hr>
+
+    <h5 class="mt-4">Supplier Status</h5>
+
+    <p>
+        Current status:
+        {% if form.instance.is_active %}
+            <span class="badge bg-success">Active</span>
+        {% else %}
+            <span class="badge bg-secondary">Inactive</span>
+        {% endif %}
+    </p>
+
+    <form method="POST"
+          action="{% url 'toggle_supplier_status' form.instance.pk %}"
+          class="mb-4">
+
+        {% csrf_token %}
+
+        {% if form.instance.is_active %}
+            <button type="submit"
+                    class="btn btn-outline-danger">
+                Deactivate Supplier
+            </button>
+        {% else %}
+            <button type="submit"
+                    class="btn btn-outline-success">
+                Reactivate Supplier
+            </button>
+        {% endif %}
+
+    </form>
+
+{% endif %}
+
+
 <p class="mt-3">
     <a href="{% url 'supplier_list' %}">
         Back to Suppliers
