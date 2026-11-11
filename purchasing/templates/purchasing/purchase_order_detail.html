@@ -75,6 +75,7 @@
                         <th>Product</th>
                         <th>SKU</th>
                         <th class="text-end">Quantity</th>
+                        <th class="text-end">Received</th>
                         <th class="text-end">Unit Cost</th>
                         <th class="text-end">Line Total</th>
                     </tr>
@@ -89,6 +90,9 @@
                             {{ item.line.quantity_ordered }}
                         </td>
                         <td class="text-end">
+                            {{ item.line.quantity_received }}
+                        </td>
+                        <td class="text-end">
                             ₹{{ item.line.unit_cost|floatformat:2 }}
                         </td>
                         <td class="text-end">
@@ -100,7 +104,7 @@
 
                 <tfoot>
                     <tr>
-                        <th colspan="4" class="text-end">
+                        <th colspan="5" class="text-end">
                             Order Total
                         </th>
                         <th class="text-end">
@@ -113,7 +117,7 @@
     </div>
 </div>
 
-{% if order.status == 'draft' or order.status == 'ordered' %}
+{% if order.status == 'draft' or order.status == 'ordered' or order.status == 'partially_received' %}
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white py-3">
         <h2 class="h5 mb-0">Order Actions</h2>
@@ -134,6 +138,31 @@
             </form>
             {% endif %}
 
+            {% if order.status == 'ordered' or order.status == 'partially_received' %}
+            <a href="{% url 'goods_receipt_create' order.pk %}"
+               class="btn btn-success">
+                {% if order.status == 'partially_received' %}
+                    Receive Remaining Goods
+                {% else %}
+                    Receive Goods
+                {% endif %}
+            </a>
+            {% endif %}
+
+            {% if order.status == 'partially_received' %}
+            <form method="post"
+                  action="{% url 'purchase_order_status' order.pk %}"
+                  onsubmit="return confirm('Close this purchase order without receiving the remaining goods? This action cannot be undone.');">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="closed_short">
+
+                <button type="submit" class="btn btn-outline-warning">
+                    Close Short
+                </button>
+            </form>
+            {% endif %}
+
+            {% if order.status == 'draft' or order.status == 'ordered' %}
             <form method="post"
                   action="{% url 'purchase_order_status' order.pk %}"
                   onsubmit="return confirm('Cancel this purchase order?');">
@@ -144,13 +173,15 @@
                     Cancel Purchase Order
                 </button>
             </form>
+            {% endif %}
 
         </div>
 
         <p class="small text-secondary mt-3 mb-0">
-            Mark as Ordered records that the purchase order has been placed.
-            It does not increase stock. Receiving goods will be handled
-            separately.
+            Marking a purchase order as ordered does not increase stock.
+            Stock increases only when usable goods are received.
+            Closing short preserves previously received quantities
+            and prevents further deliveries against this order.
         </p>
     </div>
 </div>

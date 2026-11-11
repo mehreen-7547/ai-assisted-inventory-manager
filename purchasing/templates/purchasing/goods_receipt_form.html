@@ -1,0 +1,76 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Receive Goods</h2>
+
+<p>
+    Purchase Order: {{ order.po_number }}
+</p>
+
+<p>
+    Supplier: {{ order.supplier.name }}
+</p>
+
+<p>
+    Status: {{ order.get_status_display }}
+</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    <input
+        type="hidden"
+        name="submission_key"
+        value="{{ submission_key }}"
+    >
+
+    {{ form.non_field_errors }}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Ordered</th>
+                <th>Previously Received</th>
+                <th>Remaining</th>
+                <th>Usable Quantity</th>
+                <th>Damaged Quantity</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for row in receipt_rows %}
+            <tr>
+                <td>{{ row.line.product.name }}</td>
+                <td>{{ row.line.quantity_ordered }}</td>
+                <td>{{ row.line.quantity_received }}</td>
+                <td>{{ row.remaining }}</td>
+
+                <td>
+                    {{ row.received_field }}
+                    {{ row.received_field.errors }}
+                </td>
+
+                <td>
+                    {{ row.damaged_field }}
+                    {{ row.damaged_field.errors }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <br>
+
+    <button type="submit">
+        Record Goods Receipt
+    </button>
+
+    <a href="{% url 'purchase_order_detail' order.pk %}">
+        Cancel
+    </a>
+</form>
+
+{% endblock %}

@@ -16,6 +16,9 @@ from .services import (
     create_purchase_order
 )
 
+from .forms import GoodsReceiptForm
+from .services import receive_goods
+
 
 def manager_allowed(user):
     return (
@@ -223,3 +226,93 @@ def purchase_order_status(request, pk):
         )
 
     return redirect('purchase_order_detail', pk=pk)
+
+
+
+@login_required
+def goods_receipt_create(request, pk):
+    if not manager_allowed(request.user):
+        messages.error(
+            request,
+            'Only active managers can receive goods.'
+        )
+        return redirect('home')
+
+    order = get_object_or_404(
+        PurchaseOrder.objects.select_related('supplier'),
+        pk=pk
+    )
+
+    if order.status not in ('ordered', 'partially_received'):
+        messages.error(
+            request,
+            'This purchase order cannot receive goods.'
+        )
+        return redirect('purchase_order_detail', pk=pk)
+
+    if request.method == 'POST':
+        form = GoodsReceiptForm(
+            request.POST,
+            purchase_order=order
+        )
+
+        submission_key = request.POST.get(
+            'submission_key', ''
+        )
+
+        if form.is_valid():
+            try:
+                receipt = receive_goods(
+                    order_id=order.pk,
+                    items=form.cleaned_data['items'],
+                    submission_key=submission_key,
+                    user=request.user
+                )
+
+            except ValueError as error:
+                form.add_error(None, str(error))
+
+            else:
+                messages.success(
+                    request,
+                    'Goods receipt recorded successfully. '
+                    f'Receipt number: {receipt.receipt_number}'
+                )
+                return redirect(
+                    'purchase_order_detail',
+                    pk=order.pk
+                )
+
+    else:
+        form = GoodsReceiptForm(
+            purchase_order=order
+        )
+        submission_key = uuid4().hex
+
+    if request.method == 'POST':
+        submission_key = request.POST.get(
+            'submission_key', ''
+        )
+
+    receipt_rows = []
+
+    for line in form.order_lines:
+        receipt_rows.append({
+            'line': line,
+            'remaining': (
+                line.quantity_ordered - line.quantity_received
+            ),
+            'received_field': form[f'received_{line.pk}'],
+            'damaged_field': form[f'damaged_{line.pk}']
+        })
+
+    return render(
+        request,
+        'purchasing/goods_receipt_form.html',
+        {
+            'order': order,
+            'form': form,
+            'receipt_rows': receipt_rows,
+            'submission_key': submission_key
+        }
+    )

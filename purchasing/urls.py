@@ -25,4 +25,9 @@ urlpatterns = [
         views.purchase_order_status,
         name='purchase_order_status'
     ),
+    path(
+        'purchase-orders/<int:pk>/receive/',
+        views.goods_receipt_create,
+        name='goods_receipt_create'
+    ),
 ]
