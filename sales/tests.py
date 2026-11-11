@@ -4,6 +4,11 @@ from django.db import models
 
 from .models import Sale, SaleLine
 
+from django.urls import reverse
+from django.utils import timezone
+from unittest.mock import patch
+from .services import record_sale, void_sale
+
 
 class SalesModelTests(TestCase):
 
@@ -818,3 +823,268 @@ class SaleHistoryTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'HISTORY-002')
+
+
+class VoidSaleTests(TestCase):
+
+    def setUp(self):
+        User = get_user_model()
+
+        self.manager = User.objects.create_user(
+            username='void_manager',
+            email='void_manager@example.com',
+            password='TestPassword123!',
+            role='manager'
+        )
+
+        self.sales_user = User.objects.create_user(
+            username='void_sales',
+            email='void_sales@example.com',
+            password='TestPassword123!',
+            role='sales'
+        )
+
+        self.admin_user = User.objects.create_user(
+            username='void_admin',
+            email='void_admin@example.com',
+            password='TestPassword123!',
+            role='admin'
+        )
+
+        self.supplier = Supplier.objects.create(
+            name='Void Test Supplier'
+        )
+
+        self.product = Product.objects.create(
+            sku='VOID-001',
+            name='Void Test Product',
+            category='Stationery',
+            supplier=self.supplier,
+            unit_price=Decimal('50.00')
+        )
+
+        change_stock(
+            product_id=self.product.pk,
+            delta=10,
+            movement_type='opening',
+            reason='Test opening stock',
+            user=self.manager
+        )
+
+        self.sale = record_sale(
+            items=[{
+                'product_id': self.product.pk,
+                'quantity': 3
+            }],
+            user=self.sales_user,
+            submission_key=str(uuid4())
+        )
+
+    def test_void_restores_stock(self):
+        void_sale(
+            sale_id=self.sale.pk,
+            reason='Customer cancelled',
+            user=self.manager
+        )
+
+        self.product.refresh_from_db()
+        self.sale.refresh_from_db()
+
+        self.assertEqual(self.product.on_hand, 10)
+        self.assertEqual(self.sale.status, 'voided')
+
+    def test_void_creates_stock_movement(self):
+        void_sale(
+            self.sale.pk,
+            'Incorrect sale',
+            self.manager
+        )
+
+        self.assertTrue(
+            StockMovement.objects.filter(
+                product=self.product,
+                movement_type='void',
+                quantity_delta=3,
+                source=self.sale.sale_number
+            ).exists()
+        )
+
+    def test_void_records_audit_details(self):
+        void_sale(
+            self.sale.pk,
+            'Wrong transaction',
+            self.manager
+        )
+
+        self.sale.refresh_from_db()
+
+        self.assertEqual(self.sale.voided_by, self.manager)
+        self.assertEqual(
+            self.sale.void_reason,
+            'Wrong transaction'
+        )
+        self.assertIsNotNone(self.sale.voided_at)
+        self.assertLessEqual(
+            self.sale.voided_at,
+            timezone.now()
+        )
+
+    def test_cannot_void_twice(self):
+        void_sale(
+            self.sale.pk,
+            'First void',
+            self.manager
+        )
+
+        with self.assertRaises(ValueError):
+            void_sale(
+                self.sale.pk,
+                'Second void',
+                self.manager
+            )
+
+        self.product.refresh_from_db()
+
+        self.assertEqual(self.product.on_hand, 10)
+
+        self.assertEqual(
+            StockMovement.objects.filter(
+                movement_type='void',
+                source=self.sale.sale_number
+            ).count(),
+            1
+        )
+
+    def test_sales_user_cannot_void(self):
+        with self.assertRaises(ValueError):
+            void_sale(
+                self.sale.pk,
+                'Not authorized',
+                self.sales_user
+            )
+
+        self.sale.refresh_from_db()
+        self.product.refresh_from_db()
+
+        self.assertEqual(self.sale.status, 'completed')
+        self.assertEqual(self.product.on_hand, 7)
+
+    def test_admin_cannot_void(self):
+        with self.assertRaises(ValueError):
+            void_sale(
+                self.sale.pk,
+                'Not authorized',
+                self.admin_user
+            )
+
+    def test_empty_reason_rejected(self):
+        with self.assertRaises(ValueError):
+            void_sale(
+                self.sale.pk,
+                '   ',
+                self.manager
+            )
+
+        self.sale.refresh_from_db()
+
+        self.assertEqual(self.sale.status, 'completed')
+
+    def test_anonymous_user_redirected(self):
+        response = self.client.get(
+            reverse('sale_void', args=[self.sale.pk])
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_sales_user_cannot_access_void_page(self):
+        self.client.force_login(self.sales_user)
+
+        response = self.client.get(
+            reverse('sale_void', args=[self.sale.pk])
+        )
+
+        self.assertRedirects(response, reverse('home'))
+
+    def test_manager_can_open_void_page(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(
+            reverse('sale_void', args=[self.sale.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Confirm Void')
+
+    def test_get_request_does_not_void_sale(self):
+        self.client.force_login(self.manager)
+
+        self.client.get(
+            reverse('sale_void', args=[self.sale.pk])
+        )
+
+        self.sale.refresh_from_db()
+        self.product.refresh_from_db()
+
+        self.assertEqual(self.sale.status, 'completed')
+        self.assertEqual(self.product.on_hand, 7)
+
+    def test_manager_can_void_through_post(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.post(
+            reverse('sale_void', args=[self.sale.pk]),
+            {'reason': 'Customer returned order'}
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('sale_detail', args=[self.sale.pk])
+        )
+
+        self.sale.refresh_from_db()
+        self.product.refresh_from_db()
+
+        self.assertEqual(self.sale.status, 'voided')
+        self.assertEqual(self.product.on_hand, 10)
+
+    def test_post_with_empty_reason_does_not_void(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.post(
+            reverse('sale_void', args=[self.sale.pk]),
+            {'reason': '   '}
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.sale.refresh_from_db()
+        self.product.refresh_from_db()
+
+        self.assertEqual(self.sale.status, 'completed')
+        self.assertEqual(self.product.on_hand, 7)
+
+    def test_void_rolls_back_if_stock_update_fails(self):
+        with patch(
+            'sales.services.change_stock',
+            side_effect=ValueError('Stock update failed')
+        ):
+            with self.assertRaises(ValueError):
+                void_sale(
+                    self.sale.pk,
+                    'Test rollback',
+                    self.manager
+                )
+
+        self.sale.refresh_from_db()
+        self.product.refresh_from_db()
+
+        self.assertEqual(self.sale.status, 'completed')
+        self.assertEqual(self.product.on_hand, 7)
+
+        self.assertFalse(
+            StockMovement.objects.filter(
+                movement_type='void',
+                source=self.sale.sale_number
+            ).exists()
+        )

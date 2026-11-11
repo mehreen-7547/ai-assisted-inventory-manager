@@ -8,6 +8,8 @@ from catalog.models import Product
 from inventory.services import change_stock
 from .models import Sale, SaleLine
 
+from django.utils import timezone
+
 
 def record_sale(
     items, user, submission_key,
@@ -202,5 +204,49 @@ def record_sale(
                 user=user,
                 source=sale.sale_number
             )
+
+    return sale
+
+def void_sale(sale_id, reason, user):
+    if not user or not user.is_authenticated or not user.is_active:
+        raise ValueError('An active user is required')
+
+    if user.role != 'manager':
+        raise ValueError('Only managers can void sales')
+
+    if not isinstance(reason, str) or not reason.strip():
+        raise ValueError('Void reason is required')
+
+    reason = reason.strip()
+
+    with transaction.atomic():
+        sale = Sale.objects.select_for_update().get(
+            pk=sale_id
+        )
+
+        if sale.status != 'completed':
+            raise ValueError('Sale is already voided')
+
+        for line in sale.lines.all():
+            change_stock(
+                product_id=line.product_id,
+                delta=line.quantity,
+                movement_type='void',
+                reason=reason,
+                user=user,
+                source=sale.sale_number
+            )
+
+        sale.status = 'voided'
+        sale.voided_by = user
+        sale.voided_at = timezone.now()
+        sale.void_reason = reason
+
+        sale.save(update_fields=[
+            'status',
+            'voided_by',
+            'voided_at',
+            'void_reason'
+        ])
 
     return sale

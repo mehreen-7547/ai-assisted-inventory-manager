@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Void Sale{% endblock %}
+
+{% block content %}
+
+<h1>Void Sale</h1>
+
+<p><strong>Sale Number:</strong> {{ sale.sale_number }}</p>
+<p><strong>Total:</strong> {{ sale.total }}</p>
+<p><strong>Status:</strong> {{ sale.get_status_display }}</p>
+
+{% if sale.status == 'completed' %}
+
+<p>
+    Voiding this sale will restore its product quantities
+    to inventory. This action cannot be reversed.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-danger">
+        Confirm Void
+    </button>
+</form>
+
+{% else %}
+
+<p>This sale has already been voided.</p>
+
+{% endif %}
+
+<p>
+    <a href="{% url 'sale_detail' sale.pk %}">
+        Cancel / Back to Sale
+    </a>
+</p>
+
+{% endblock %}

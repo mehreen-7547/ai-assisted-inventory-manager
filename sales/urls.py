@@ -19,4 +19,10 @@ urlpatterns = [
         name='sale_list'
     ),
 
+    path(
+    'sales/<int:sale_id>/void/',
+    views.sale_void,
+    name='sale_void'
+    ),
+
 ]

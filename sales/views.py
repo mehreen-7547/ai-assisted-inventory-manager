@@ -6,12 +6,16 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.decorators import role_required
-from .forms import SaleForm
+
 from .models import Sale
-from .services import record_sale
 
 from django.core.paginator import Paginator
 from django.db.models import Q
+
+from django.views.decorators.http import require_POST
+
+from .forms import SaleForm, VoidSaleForm
+from .services import record_sale, void_sale
 
 
 
@@ -112,4 +116,39 @@ def sale_detail(request, sale_id):
     return render(request, 'sales/sale_detail.html', {
         'sale': sale,
         'lines': lines
+    })
+
+
+@login_required
+@role_required('manager')
+def sale_void(request, sale_id):
+    sale = get_object_or_404(Sale, pk=sale_id)
+
+    if request.method == 'POST':
+        form = VoidSaleForm(request.POST)
+
+        if form.is_valid():
+            try:
+                void_sale(
+                    sale_id=sale.pk,
+                    reason=form.cleaned_data['reason'],
+                    user=request.user
+                )
+
+                messages.success(
+                    request,
+                    'Sale voided and stock restored successfully.'
+                )
+
+                return redirect('sale_detail', sale_id=sale.pk)
+
+            except ValueError as error:
+                form.add_error(None, str(error))
+
+    else:
+        form = VoidSaleForm()
+
+    return render(request, 'sales/sale_void.html', {
+        'sale': sale,
+        'form': form
     })

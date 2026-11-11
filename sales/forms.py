@@ -94,3 +94,19 @@ class SaleForm(forms.Form):
         cleaned_data['items'] = items
 
         return cleaned_data
+
+
+class VoidSaleForm(forms.Form):
+    reason = forms.CharField(
+        label='Reason for voiding',
+        widget=forms.Textarea(attrs={'rows': 3}),
+        max_length=500
+    )
+
+    def clean_reason(self):
+        reason = self.cleaned_data['reason'].strip()
+
+        if not reason:
+            raise forms.ValidationError('Reason is required')
+
+        return reason

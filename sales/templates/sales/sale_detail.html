@@ -56,5 +56,25 @@
     </a>
 </p>
 
+{% if user.role == 'manager' and sale.status == 'completed' %}
+
+<p>
+    <a href="{% url 'sale_void' sale.pk %}"
+       class="btn btn-danger">
+        Void Sale
+    </a>
+</p>
+
+{% endif %}
+
+{% if sale.status == 'voided' %}
+
+<h3>Void Details</h3>
+
+<p><strong>Voided By:</strong> {{ sale.voided_by.username }}</p>
+<p><strong>Voided At:</strong> {{ sale.voided_at }}</p>
+<p><strong>Reason:</strong> {{ sale.void_reason }}</p>
+
+{% endif %}
 
 {% endblock %}
