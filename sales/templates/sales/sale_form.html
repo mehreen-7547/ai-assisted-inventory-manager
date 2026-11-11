@@ -5,53 +5,237 @@
 
 {% block content %}
 
-<h1>Record New Sale</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Record New Sale</h1>
+        <p class="text-secondary mb-0">
+            Add products and enter their quantities.
+        </p>
+    </div>
+    <a href="{% url 'sale_list' %}" class="btn btn-outline-secondary">
+        Sales History
+    </a>
+</div>
 
-<p>Select up to five products and enter their quantities.</p>
-
-<form method="post">
+<form method="post" id="sale-form">
     {% csrf_token %}
 
-    <input
-        type="hidden"
-        name="submission_key"
-        value="{{ submission_key }}"
-    >
+    <input type="hidden" name="submission_key" value="{{ submission_key }}">
 
-    {{ form.non_field_errors }}
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
 
-    {% for field in form %}
-        {% if field.name == 'discount_type' or field.name == 'discount_value' %}
-        {% else %}
-            <p>
-                {{ field.label_tag }}
-                {{ field }}
-                {{ field.errors }}
-            </p>
-        {% endif %}
-    {% endfor %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0">Sale Items</h2>
+            <button type="button" id="add-item" class="btn btn-outline-primary btn-sm">
+                + Add Item
+            </button>
+        </div>
 
-    <h3>Discount</h3>
+        <div class="card-body">
+            <div id="item-rows" class="d-grid gap-3">
 
-    <p>
-        {{ form.discount_type.label_tag }}
-        {{ form.discount_type }}
-        {{ form.discount_type.errors }}
-    </p>
+                {% for row in sale_rows %}
+                <div class="sale-item border rounded-3 p-3">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-7">
+                            <label for="{{ row.product.id_for_label }}" class="form-label fw-semibold">
+                                Product
+                            </label>
 
-    <p>
-        {{ form.discount_value.label_tag }}
-        {{ form.discount_value }}
-        {{ form.discount_value.errors }}
-    </p>
+                            <select
+                                name="{{ row.product.html_name }}"
+                                id="{{ row.product.id_for_label }}"
+                                class="form-select"
+                            >
+                                {% for value, label in row.product.field.choices %}
+                                <option value="{{ value }}"
+                                    {% if row.product.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="text-danger small">{{ row.product.errors }}</div>
+                        </div>
 
-    <button type="submit" class="btn btn-primary">
-        Record Sale
-    </button>
+                        <div class="col-8 col-md-3">
+                            <label for="{{ row.quantity.id_for_label }}" class="form-label fw-semibold">
+                                Quantity
+                            </label>
 
-    <a href="{% url 'home' %}" class="btn">
-        Cancel
-    </a>
+                            <input
+                                type="number"
+                                name="{{ row.quantity.html_name }}"
+                                id="{{ row.quantity.id_for_label }}"
+                                class="form-control"
+                                min="1"
+                                step="1"
+                                value="{{ row.quantity.value|default_if_none:'' }}"
+                            >
+                            <div class="text-danger small">{{ row.quantity.errors }}</div>
+                        </div>
+
+                        <div class="col-4 col-md-2 d-grid">
+                            <button type="button" class="btn btn-outline-danger remove-item">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="h5 mb-3">Discount</h2>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Discount Type</label>
+                    <select
+                        name="discount_type"
+                        id="id_discount_type"
+                        class="form-select"
+                    >
+                        {% for value, label in form.discount_type.field.choices %}
+                        <option value="{{ value }}"
+                            {% if form.discount_type.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {{ form.discount_type.errors }}
+                </div>
+
+                <div class="col-md-6">
+                    <label for="id_discount_value" class="form-label">
+                        Discount Value
+                    </label>
+                    <input
+                        type="number"
+                        name="discount_value"
+                        id="id_discount_value"
+                        class="form-control"
+                        min="0"
+                        step="0.01"
+                        value="{{ form.discount_value.value|default:'0' }}"
+                    >
+                    {{ form.discount_value.errors }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">
+            Record Sale
+        </button>
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+            Cancel
+        </a>
+    </div>
 </form>
+
+<template id="item-template">
+    <div class="sale-item border rounded-3 p-3">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-7">
+                <label for="id_product___INDEX__" class="form-label fw-semibold">
+                    Product
+                </label>
+                <select
+                    name="product___INDEX__"
+                    id="id_product___INDEX__"
+                    class="form-select"
+                >
+                    <option value="">---------</option>
+                    {% for product in available_products %}
+                    <option value="{{ product.pk }}">{{ product.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-8 col-md-3">
+                <label for="id_quantity___INDEX__" class="form-label fw-semibold">
+                    Quantity
+                </label>
+                <input
+                    type="number"
+                    name="quantity___INDEX__"
+                    id="id_quantity___INDEX__"
+                    class="form-control"
+                    min="1"
+                    step="1"
+                >
+            </div>
+
+            <div class="col-4 col-md-2 d-grid">
+                <button type="button" class="btn btn-outline-danger remove-item">
+                    Remove
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('item-rows');
+    const addButton = document.getElementById('add-item');
+    const template = document.getElementById('item-template');
+
+    let nextIndex = {{ next_row_number }};
+
+    function updateButtons() {
+        const rows = container.querySelectorAll('.sale-item');
+
+        rows.forEach(function (row) {
+            row.querySelector('.remove-item').disabled = rows.length === 1;
+        });
+    }
+
+    addButton.addEventListener('click', function () {
+        const count = container.querySelectorAll('.sale-item').length;
+
+        if (count >= 100) {
+            alert('Maximum 100 product rows per sale.');
+            return;
+        }
+
+        const html = template.innerHTML.replaceAll(
+            '__INDEX__',
+            String(nextIndex)
+        );
+
+        container.insertAdjacentHTML('beforeend', html);
+        nextIndex += 1;
+
+        updateButtons();
+    });
+
+    container.addEventListener('click', function (event) {
+        if (!event.target.classList.contains('remove-item')) {
+            return;
+        }
+
+        const rows = container.querySelectorAll('.sale-item');
+
+        if (rows.length > 1) {
+            event.target.closest('.sale-item').remove();
+        }
+
+        updateButtons();
+    });
+
+    updateButtons();
+});
+</script>
 
 {% endblock %}

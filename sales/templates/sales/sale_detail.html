@@ -5,76 +5,123 @@
 
 {% block content %}
 
-<h1>Sale Recorded</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Sale Details</h1>
+        <p class="text-secondary mb-0">{{ sale.sale_number }}</p>
+    </div>
 
-<p><strong>Sale Number:</strong> {{ sale.sale_number }}</p>
-<p><strong>Date:</strong> {{ sale.created_at }}</p>
-<p><strong>Recorded By:</strong> {{ sale.created_by.username }}</p>
-<p><strong>Status:</strong> {{ sale.get_status_display }}</p>
+    {% if sale.status == 'completed' %}
+    <span class="badge text-bg-success fs-6">Completed</span>
+    {% else %}
+    <span class="badge text-bg-secondary fs-6">Voided</span>
+    {% endif %}
+</div>
 
-<table>
-    <thead>
-        <tr>
-            <th>Product</th>
-            <th>Quantity</th>
-            <th>Unit Price</th>
-            <th>Line Total</th>
-        </tr>
-    </thead>
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="text-secondary small">Sale Number</div>
+                <div class="fw-semibold">{{ sale.sale_number }}</div>
+            </div>
 
-    <tbody>
-        {% for line in lines %}
-        <tr>
-            <td>{{ line.product_name }}</td>
-            <td>{{ line.quantity }}</td>
-            <td>{{ line.unit_price }}</td>
-            <td>{{ line.line_total }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <div class="col-md-4">
+                <div class="text-secondary small">Date</div>
+                <div>{{ sale.created_at|date:"d M Y, H:i" }}</div>
+            </div>
 
-<p><strong>Subtotal:</strong> {{ sale.subtotal }}</p>
-<p>
-    <strong>Discount:</strong>
-    {{ sale.get_discount_type_display }}
-    ({{ sale.discount_value }})
-</p>
-<p><strong>Total:</strong> {{ sale.total }}</p>
+            <div class="col-md-4">
+                <div class="text-secondary small">Recorded By</div>
+                <div>{{ sale.created_by.username }}</div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<a href="{% url 'sale_create' %}" class="btn btn-primary">
-    Record Another Sale
-</a>
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0">Products Sold</h2>
+    </div>
 
-<a href="{% url 'home' %}" class="btn">
-    Back to Dashboard
-</a>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Product</th>
+                    <th class="text-end">Quantity</th>
+                    <th class="text-end">Unit Price</th>
+                    <th class="text-end">Line Total</th>
+                </tr>
+            </thead>
 
-<p>
-    <a href="{% url 'sale_list' %}">
-        Back to Sales History
-    </a>
-</p>
+            <tbody>
+                {% for line in lines %}
+                <tr>
+                    <td>{{ line.product_name }}</td>
+                    <td class="text-end">{{ line.quantity }}</td>
+                    <td class="text-end">{{ line.unit_price|floatformat:2 }}</td>
+                    <td class="text-end">{{ line.line_total|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-{% if user.role == 'manager' and sale.status == 'completed' %}
+    <div class="card-body border-top">
+        <div class="row justify-content-end">
+            <div class="col-md-5">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal</span>
+                    <span>{{ sale.subtotal|floatformat:2 }}</span>
+                </div>
 
-<p>
-    <a href="{% url 'sale_void' sale.pk %}"
-       class="btn btn-danger">
-        Void Sale
-    </a>
-</p>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Discount ({{ sale.get_discount_type_display }})</span>
+                    <span>{{ sale.discount_value|floatformat:2 }}</span>
+                </div>
 
-{% endif %}
+                <hr>
+
+                <div class="d-flex justify-content-between fs-5 fw-bold">
+                    <span>Total</span>
+                    <span>{{ sale.total|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% if sale.status == 'voided' %}
+<div class="card border-warning mb-4">
+    <div class="card-body">
+        <h2 class="h5">Void Details</h2>
 
-<h3>Void Details</h3>
-
-<p><strong>Voided By:</strong> {{ sale.voided_by.username }}</p>
-<p><strong>Voided At:</strong> {{ sale.voided_at }}</p>
-<p><strong>Reason:</strong> {{ sale.void_reason }}</p>
-
+        <p><strong>Voided By:</strong> {{ sale.voided_by.username }}</p>
+        <p><strong>Voided At:</strong> {{ sale.voided_at }}</p>
+        <p class="mb-0"><strong>Reason:</strong> {{ sale.void_reason }}</p>
+    </div>
+</div>
 {% endif %}
+
+<div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'sale_create' %}" class="btn btn-primary">
+        Record Another Sale
+    </a>
+
+    <a href="{% url 'sale_list' %}" class="btn btn-outline-secondary">
+        Sales History
+    </a>
+
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+        Dashboard
+    </a>
+
+    {% if user.role == 'manager' and sale.status == 'completed' %}
+    <a href="{% url 'sale_void' sale.pk %}" class="btn btn-outline-danger">
+        Void Sale
+    </a>
+    {% endif %}
+</div>
 
 {% endblock %}

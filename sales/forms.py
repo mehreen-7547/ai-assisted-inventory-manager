@@ -4,6 +4,8 @@ from catalog.models import Product
 
 
 class SaleForm(forms.Form):
+    MAX_ROWS = 100
+
     discount_type = forms.ChoiceField(
         choices=[
             ('none', 'No discount'),
@@ -27,11 +29,28 @@ class SaleForm(forms.Form):
             on_hand__gt=0
         ).order_by('name')
 
-        for number in range(1, 6):
+        self.too_many_rows = False
+
+        if self.is_bound:
+            row_numbers = set()
+
+            for key in self.data.keys():
+                if key.startswith(('product_', 'quantity_')):
+                    number = key.split('_', 1)[1]
+
+                    if number.isdigit() and int(number) > 0:
+                        row_numbers.add(int(number))
+
+            self.too_many_rows = len(row_numbers) > self.MAX_ROWS
+            self.row_numbers = sorted(row_numbers)[:self.MAX_ROWS]
+        else:
+            self.row_numbers = [1]
+
+        for number in self.row_numbers:
             self.fields[f'product_{number}'] = forms.ModelChoiceField(
                 queryset=products,
                 required=False,
-                label=f'Product {number}'
+                label='Product'
             )
 
             self.fields[f'quantity_{number}'] = forms.IntegerField(
@@ -42,10 +61,14 @@ class SaleForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+
+        if self.too_many_rows:
+            raise forms.ValidationError('Too many product rows.')
+
         items = []
         selected_products = set()
 
-        for number in range(1, 6):
+        for number in self.row_numbers:
             product = cleaned_data.get(f'product_{number}')
             quantity = cleaned_data.get(f'quantity_{number}')
 
@@ -70,29 +93,24 @@ class SaleForm(forms.Form):
             })
 
         if not items:
-            raise forms.ValidationError(
-                'Select at least one product.'
-            )
+            raise forms.ValidationError('Select at least one product.')
 
         discount_type = cleaned_data.get('discount_type')
         discount_value = cleaned_data.get('discount_value')
 
-        if discount_type == 'none' and discount_value != 0:
-            raise forms.ValidationError(
-                'Discount must be zero when no discount is selected.'
-            )
+        if discount_type == 'none' and discount_value is not None:
+            if discount_value != 0:
+                raise forms.ValidationError(
+                    'Discount must be zero when no discount is selected.'
+                )
 
-        if (
-            discount_type == 'percent'
-            and discount_value is not None
-            and discount_value > 100
-        ):
-            raise forms.ValidationError(
-                'Percentage discount cannot exceed 100.'
-            )
+        if discount_type == 'percent' and discount_value is not None:
+            if discount_value > 100:
+                raise forms.ValidationError(
+                    'Percentage discount cannot exceed 100.'
+                )
 
         cleaned_data['items'] = items
-
         return cleaned_data
 
 

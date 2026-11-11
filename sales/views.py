@@ -17,6 +17,8 @@ from django.views.decorators.http import require_POST
 from .forms import SaleForm, VoidSaleForm
 from .services import record_sale, void_sale
 
+from catalog.models import Product
+
 
 
 
@@ -55,6 +57,7 @@ def sale_list(request):
 
 
 
+
 @login_required
 @role_required('sales', 'manager')
 def sale_create(request):
@@ -86,11 +89,27 @@ def sale_create(request):
         form = SaleForm()
         submission_key = str(uuid4())
 
+    sale_rows = [
+        {
+            'product': form[f'product_{number}'],
+            'quantity': form[f'quantity_{number}']
+        }
+        for number in form.row_numbers
+    ]
+
+    available_products = Product.objects.filter(
+        is_active=True,
+        on_hand__gt=0
+    ).order_by('name')
+
     return render(request, 'sales/sale_form.html', {
         'form': form,
         'submission_key': submission_key,
-        'row_numbers': range(1, 6)
+        'sale_rows': sale_rows,
+        'available_products': available_products,
+        'next_row_number': max(form.row_numbers, default=0) + 1
     })
+
 
 
 @login_required

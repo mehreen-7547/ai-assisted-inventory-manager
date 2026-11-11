@@ -5,107 +5,140 @@
 
 {% block content %}
 
-<h1>Sales History</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Sales History</h1>
+        <p class="text-secondary mb-0">Review and search recorded sales.</p>
+    </div>
 
-<p>
     <a href="{% url 'sale_create' %}" class="btn btn-primary">
-        Record New Sale
+        + Record New Sale
     </a>
-</p>
+</div>
 
-<form method="get">
-    <p>
-        <label for="search">Search</label>
-        <input
-            type="text"
-            id="search"
-            name="search"
-            value="{{ search }}"
-            placeholder="Sale number or employee"
-        >
-    </p>
+<div class="card shadow-sm">
+    <div class="card-body">
 
-    <p>
-        <label for="status">Status</label>
-        <select name="status" id="status">
-            <option value="">All statuses</option>
-            <option value="completed"
-                {% if status == 'completed' %}selected{% endif %}>
-                Completed
-            </option>
-            <option value="voided"
-                {% if status == 'voided' %}selected{% endif %}>
-                Voided
-            </option>
-        </select>
-    </p>
+        <form method="get" class="row g-2 align-items-end mb-4">
+            <div class="col-12 col-md">
+                <label for="search" class="form-label">Search</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="search"
+                    name="search"
+                    value="{{ search }}"
+                    placeholder="Sale number or employee"
+                >
+            </div>
 
-    <button type="submit" class="btn btn-primary">
-        Filter
-    </button>
+            <div class="col-12 col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">All statuses</option>
+                    <option value="completed"
+                        {% if status == 'completed' %}selected{% endif %}>
+                        Completed
+                    </option>
+                    <option value="voided"
+                        {% if status == 'voided' %}selected{% endif %}>
+                        Voided
+                    </option>
+                </select>
+            </div>
 
-    <a href="{% url 'sale_list' %}">Clear</a>
-</form>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
 
-<hr>
-
-<table>
-    <thead>
-        <tr>
-            <th>Sale Number</th>
-            <th>Date</th>
-            <th>Recorded By</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        {% for sale in page_obj %}
-        <tr>
-            <td>{{ sale.sale_number }}</td>
-            <td>{{ sale.created_at|date:"d M Y, H:i" }}</td>
-            <td>{{ sale.created_by.username }}</td>
-            <td>{{ sale.get_status_display }}</td>
-            <td>{{ sale.total }}</td>
-            <td>
-                <a href="{% url 'sale_detail' sale.pk %}">
-                    View
+            <div class="col-auto">
+                <a href="{% url 'sale_list' %}" class="btn btn-outline-secondary">
+                    Clear
                 </a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="6">No sales found.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+            </div>
+        </form>
 
-{% if page_obj.has_other_pages %}
-    <p>
-        Page {{ page_obj.number }}
-        of {{ page_obj.paginator.num_pages }}
-    </p>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sale Number</th>
+                        <th>Date</th>
+                        <th>Recorded By</th>
+                        <th>Status</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
 
-    <p>
-        {% if page_obj.has_previous %}
-            <a href="?search={{ search|urlencode }}&status={{ status }}&page={{ page_obj.previous_page_number }}">
-                Previous
-            </a>
+                <tbody>
+                    {% for sale in page_obj %}
+                    <tr>
+                        <td class="fw-semibold">{{ sale.sale_number }}</td>
+                        <td class="text-nowrap">
+                            {{ sale.created_at|date:"d M Y, H:i" }}
+                        </td>
+                        <td>{{ sale.created_by.username }}</td>
+                        <td>
+                            {% if sale.status == 'completed' %}
+                            <span class="badge text-bg-success">Completed</span>
+                            {% else %}
+                            <span class="badge text-bg-secondary">Voided</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">{{ sale.total|floatformat:2 }}</td>
+                        <td class="text-end">
+                            <a
+                                href="{% url 'sale_detail' sale.pk %}"
+                                class="btn btn-sm btn-outline-primary"
+                            >
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-secondary py-4">
+                            No sales found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <span class="text-secondary small">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            <div class="d-flex gap-2">
+                {% if page_obj.has_previous %}
+                <a
+                    class="btn btn-sm btn-outline-secondary"
+                    href="?search={{ search|urlencode }}&amp;status={{ status|urlencode }}&amp;page={{ page_obj.previous_page_number }}"
+                >
+                    Previous
+                </a>
+                {% endif %}
+
+                {% if page_obj.has_next %}
+                <a
+                    class="btn btn-sm btn-outline-secondary"
+                    href="?search={{ search|urlencode }}&amp;status={{ status|urlencode }}&amp;page={{ page_obj.next_page_number }}"
+                >
+                    Next
+                </a>
+                {% endif %}
+            </div>
+        </div>
         {% endif %}
+    </div>
+</div>
 
-        {% if page_obj.has_next %}
-            <a href="?search={{ search|urlencode }}&status={{ status }}&page={{ page_obj.next_page_number }}">
-                Next
-            </a>
-        {% endif %}
-    </p>
-{% endif %}
-
-<p>
-    <a href="{% url 'home' %}">Back to Dashboard</a>
-</p>
+<a href="{% url 'home' %}" class="btn btn-link px-0 mt-3">
+    Back to Dashboard
+</a>
 
 {% endblock %}

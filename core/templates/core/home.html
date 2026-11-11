@@ -5,91 +5,75 @@
 
 {% block content %}
 
-<h1>Inventory &amp; Demand Intelligence</h1>
-
-<!-- WELCOME -->
-<h2>Welcome, {{ request.user.username }}</h2>
-<p>Role: {{ request.user.get_role_display }}</p>
-
-<!-- DASHBOARD -->
-{% if request.user.role == 'admin' %}
-
-    <h3>Administrator Dashboard</h3>
-
-    {% if request.user.is_staff %}
-        <p>
-            <a href="/admin/">Open Django admin</a>
-        </p>
-    {% endif %}
-
-{% elif request.user.role == 'manager' %}
-
-    <h3>Inventory Manager Dashboard</h3>
-
-
-    <p>
-        <a href="{% url 'supplier_list' %}"
-        class="btn btn-primary">
-            Manage Suppliers
-        </a>
+<div class="mb-4">
+    <h1 class="h3 mb-2">Inventory &amp; Demand Intelligence</h1>
+    <p class="text-secondary">
+        Welcome, <strong>{{ request.user.username }}</strong>
+        &middot; {{ request.user.get_role_display }}
     </p>
+</div>
 
+<div class="card shadow-sm">
+    <div class="card-body p-4">
 
-    <p>
-        <a href="{% url 'product_list' %}"
-        class="btn btn-primary">
-            Manage Products
-        </a>
-    </p>
+        {% if request.user.role == 'admin' %}
 
+        <h2 class="h5 mb-3">Administrator Dashboard</h2>
 
-    <p>
-        <a href="{% url 'sale_create' %}"
-        class="btn btn-primary">
-            Record Sale
-        </a>
-    </p>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'employee_list' %}" class="btn btn-primary">
+                Manage Employees
+            </a>
 
+            {% if request.user.is_staff %}
+            <a href="/admin/" class="btn btn-outline-secondary">
+                Open Django Admin
+            </a>
+            {% endif %}
+        </div>
 
-    <p>
-        <a href="{% url 'sale_list' %}"
-        class="btn btn-primary">
-            Sales History
-        </a>
-    </p>
+        {% elif request.user.role == 'manager' %}
 
-  
+        <h2 class="h5 mb-3">Inventory Manager Dashboard</h2>
 
-{% elif request.user.role == 'sales' %}
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'supplier_list' %}" class="btn btn-outline-primary">
+                Manage Suppliers
+            </a>
 
-    <h3>Sales Staff Dashboard</h3>
+            <a href="{% url 'product_list' %}" class="btn btn-outline-primary">
+                Manage Products
+            </a>
 
+            <a href="{% url 'sale_create' %}" class="btn btn-primary">
+                Record Sale
+            </a>
 
-    <p>
-        <a href="{% url 'product_list' %}"
-        class="btn btn-primary">
-            View Products
-        </a>
-    </p>
+            <a href="{% url 'sale_list' %}" class="btn btn-outline-primary">
+                Sales History
+            </a>
+        </div>
 
+        {% elif request.user.role == 'sales' %}
 
-    <p>
-        <a href="{% url 'sale_create' %}"
-        class="btn btn-primary">
-            Record Sale
-        </a>
-    </p>
+        <h2 class="h5 mb-3">Sales Staff Dashboard</h2>
 
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'product_list' %}" class="btn btn-outline-primary">
+                View Products
+            </a>
 
-    <p>
-        <a href="{% url 'sale_list' %}"
-        class="btn btn-primary">
-            Sales History
-        </a>
-    </p>
+            <a href="{% url 'sale_create' %}" class="btn btn-primary">
+                Record Sale
+            </a>
 
+            <a href="{% url 'sale_list' %}" class="btn btn-outline-primary">
+                Sales History
+            </a>
+        </div>
 
-
-{% endif %}
+        {% endif %}
+    </div>
+</div>
 
 {% endblock %}

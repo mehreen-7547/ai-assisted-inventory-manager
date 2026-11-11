@@ -564,6 +564,7 @@ class SalePageTests(RecordSaleTests):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Record New Sale')
 
+
     def test_post_records_sale(self):
         self.client.force_login(self.user)
 
@@ -583,6 +584,7 @@ class SalePageTests(RecordSaleTests):
 
         self.product.refresh_from_db()
         self.assertEqual(self.product.on_hand, 8)
+
 
     def test_duplicate_post_does_not_deduct_twice(self):
         self.client.force_login(self.user)
