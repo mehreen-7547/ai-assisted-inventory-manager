@@ -59,6 +59,10 @@
                                 </option>
                                 {% endfor %}
                             </select>
+
+                            <div class="form-text">
+                                Only active products with available stock are shown.
+                            </div>
                             <div class="text-danger small">{{ row.product.errors }}</div>
                         </div>
 
@@ -160,6 +164,10 @@
                     <option value="{{ product.pk }}">{{ product.name }}</option>
                     {% endfor %}
                 </select>
+
+                <div class="form-text">
+                    Only active products with available stock are shown.
+                </div>
             </div>
 
             <div class="col-8 col-md-3">
