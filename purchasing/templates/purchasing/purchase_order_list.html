@@ -1,0 +1,114 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Purchase Orders{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Purchase Orders</h1>
+        <p class="text-secondary mb-0">
+            Select a purchase order to view its details.
+        </p>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a href="{% url 'purchase_order_create' %}"
+           class="btn btn-primary">
+            + Create Purchase Order
+        </a>
+
+        <a href="{% url 'home' %}"
+           class="btn btn-outline-secondary">
+            Back
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>PO Number</th>
+                        <th>Supplier</th>
+                        <th>Status</th>
+                        <th>Products</th>
+                        <th>Created Date</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for order in orders %}
+                    <tr class="po-row"
+                        tabindex="0"
+                        role="link"
+                        data-url="{% url 'purchase_order_detail' order.pk %}"
+                        style="cursor: pointer;">
+
+                        <td>
+                            <span class="fw-semibold text-primary">
+                                {{ order.po_number }}
+                            </span>
+                        </td>
+
+                        <td>{{ order.supplier.name }}</td>
+
+                        <td>
+                            {% if order.status == 'draft' %}
+                            <span class="badge bg-secondary">Draft</span>
+                            {% elif order.status == 'ordered' %}
+                            <span class="badge bg-primary">Ordered</span>
+                            {% elif order.status == 'received' %}
+                            <span class="badge bg-success">Received</span>
+                            {% elif order.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">
+                                {{ order.get_status_display }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ order.product_count }}</td>
+                        <td>{{ order.created_at|date:"d M Y" }}</td>
+                    </tr>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="5"
+                            class="text-center text-secondary py-4">
+                            No purchase orders found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.po-row').forEach(function (row) {
+        function openOrder() {
+            window.location.href = row.dataset.url;
+        }
+
+        row.addEventListener('click', openOrder);
+
+        row.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openOrder();
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

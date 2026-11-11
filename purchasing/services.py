@@ -1,14 +1,10 @@
 
 from decimal import Decimal
 
-
-from accounts.models import CustomUser
-from catalog.models import Product, Supplier
-
-from .models import PurchaseOrder, PurchaseOrderLine
-
 from django.db import IntegrityError, transaction
 
+from catalog.models import Product, Supplier
+from .models import PurchaseOrder, PurchaseOrderLine
 
 
 def create_purchase_order(po_number, supplier_id, items, user):
@@ -101,7 +97,6 @@ def create_purchase_order(po_number, supplier_id, items, user):
                 'unit_cost': unit_cost
             })
 
-
         try:
             with transaction.atomic():
                 order = PurchaseOrder.objects.create(
@@ -122,5 +117,43 @@ def create_purchase_order(po_number, supplier_id, items, user):
             raise ValueError(
                 'Purchase order number already exists.'
             )
+
+        return order
+
+
+def change_purchase_order_status(order_id, new_status, user):
+    if (
+        not user
+        or not user.is_authenticated
+        or not user.is_active
+        or user.role != 'manager'
+    ):
+        raise ValueError('Only active managers can change order status.')
+
+    if new_status not in ('ordered', 'cancelled'):
+        raise ValueError('Invalid purchase order status.')
+
+    with transaction.atomic():
+        try:
+            order = PurchaseOrder.objects.select_for_update().get(
+                pk=order_id
+            )
+        except PurchaseOrder.DoesNotExist:
+            raise ValueError('Purchase order not found.')
+
+        if new_status == 'ordered':
+            if order.status != 'draft':
+                raise ValueError(
+                    'Only draft purchase orders can be marked as ordered.'
+                )
+
+        elif new_status == 'cancelled':
+            if order.status not in ('draft', 'ordered'):
+                raise ValueError(
+                    'This purchase order cannot be cancelled.'
+                )
+
+        order.status = new_status
+        order.save(update_fields=['status'])
 
         return order

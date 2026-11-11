@@ -1,0 +1,159 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Purchase Order Details{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-1">{{ order.po_number }}</h1>
+        <p class="text-secondary mb-0">
+            Purchase Order Details
+        </p>
+    </div>
+
+    <a href="{% url 'purchase_order_list' %}"
+       class="btn btn-outline-secondary">
+        Back to Purchase Orders
+    </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <div class="text-secondary small">Supplier</div>
+                <div class="fw-semibold">{{ order.supplier.name }}</div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="text-secondary small">Status</div>
+
+                {% if order.status == 'draft' %}
+                <span class="badge bg-secondary">Draft</span>
+                {% elif order.status == 'ordered' %}
+                <span class="badge bg-primary">Ordered</span>
+                {% elif order.status == 'received' %}
+                <span class="badge bg-success">Received</span>
+                {% elif order.status == 'cancelled' %}
+                <span class="badge bg-danger">Cancelled</span>
+                {% else %}
+                <span class="badge bg-warning text-dark">
+                    {{ order.get_status_display }}
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <div class="text-secondary small">Created By</div>
+                <div>{{ order.created_by.username }}</div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="text-secondary small">Created Date</div>
+                <div>{{ order.created_at|date:"d M Y, h:i A" }}</div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0">Ordered Products</h2>
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th class="text-end">Quantity</th>
+                        <th class="text-end">Unit Cost</th>
+                        <th class="text-end">Line Total</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td>{{ item.line.product.name }}</td>
+                        <td>{{ item.line.product.sku }}</td>
+                        <td class="text-end">
+                            {{ item.line.quantity_ordered }}
+                        </td>
+                        <td class="text-end">
+                            ₹{{ item.line.unit_cost|floatformat:2 }}
+                        </td>
+                        <td class="text-end">
+                            ₹{{ item.line_total|floatformat:2 }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <th colspan="4" class="text-end">
+                            Order Total
+                        </th>
+                        <th class="text-end">
+                            ₹{{ order_total|floatformat:2 }}
+                        </th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if order.status == 'draft' or order.status == 'ordered' %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0">Order Actions</h2>
+    </div>
+
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2">
+
+            {% if order.status == 'draft' %}
+            <form method="post"
+                  action="{% url 'purchase_order_status' order.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="ordered">
+
+                <button type="submit" class="btn btn-primary">
+                    Mark as Ordered
+                </button>
+            </form>
+            {% endif %}
+
+            <form method="post"
+                  action="{% url 'purchase_order_status' order.pk %}"
+                  onsubmit="return confirm('Cancel this purchase order?');">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="cancelled">
+
+                <button type="submit" class="btn btn-outline-danger">
+                    Cancel Purchase Order
+                </button>
+            </form>
+
+        </div>
+
+        <p class="small text-secondary mt-3 mb-0">
+            Mark as Ordered records that the purchase order has been placed.
+            It does not increase stock. Receiving goods will be handled
+            separately.
+        </p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

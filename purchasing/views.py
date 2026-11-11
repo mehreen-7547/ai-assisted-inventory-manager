@@ -1,16 +1,33 @@
 
+from decimal import Decimal
+from uuid import uuid4
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.db.models import Count
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from catalog.models import Product
 from .forms import PurchaseOrderForm
-from .services import create_purchase_order
+from .models import PurchaseOrder
+from .services import (
+    change_purchase_order_status,
+    create_purchase_order
+)
+
+
+def manager_allowed(user):
+    return (
+        user.is_authenticated
+        and user.is_active
+        and user.role == 'manager'
+    )
 
 
 @login_required
 def purchase_order_create(request):
-    if not request.user.is_active or request.user.role != 'manager':
+    if not manager_allowed(request.user):
         messages.error(
             request,
             'Only active managers can create purchase orders.'
@@ -22,24 +39,46 @@ def purchase_order_create(request):
 
         if form.is_valid():
             data = form.cleaned_data
+            supplied_number = data.get('po_number')
 
-            try:
-                create_purchase_order(
-                    po_number=data['po_number'],
-                    supplier_id=data['supplier'].pk,
-                    items=data['items'],
-                    user=request.user
+            for attempt in range(5):
+                po_number = supplied_number or (
+                    'PO-' + uuid4().hex[:12].upper()
                 )
 
-            except ValueError as error:
-                form.add_error(None, str(error))
+                try:
+                    order = create_purchase_order(
+                        po_number=po_number,
+                        supplier_id=data['supplier'].pk,
+                        items=data['items'],
+                        user=request.user
+                    )
 
-            else:
-                messages.success(
-                    request,
-                    'Purchase order created successfully.'
-                )
-                return redirect('home')
+                except ValueError as error:
+                    if (
+                        not supplied_number
+                        and str(error) ==
+                        'Purchase order number already exists.'
+                        and attempt < 4
+                    ):
+                        continue
+
+                    form.add_error(None, str(error))
+                    break
+
+                else:
+                    messages.success(
+                        request,
+                        'Purchase order created successfully.'
+                    )
+
+                    if supplied_number:
+                        return redirect('home')
+
+                    return redirect(
+                        'purchase_order_detail',
+                        pk=order.pk
+                    )
 
     else:
         form = PurchaseOrderForm()
@@ -51,6 +90,16 @@ def purchase_order_create(request):
 
     product_suppliers = {
         str(product.pk): product.supplier_id
+        for product in available_products
+    }
+
+    product_details = {
+        str(product.pk): {
+            'on_hand': product.on_hand,
+            'safety_stock': product.safety_stock,
+            'lead_time_days': product.lead_time_days,
+            'unit_price': str(product.unit_price)
+        }
         for product in available_products
     }
 
@@ -73,6 +122,104 @@ def purchase_order_create(request):
             'order_rows': order_rows,
             'available_products': available_products,
             'product_suppliers': product_suppliers,
+            'product_details': product_details,
             'next_row_number': next_row_number
         }
     )
+
+
+@login_required
+def purchase_order_list(request):
+    if not manager_allowed(request.user):
+        messages.error(
+            request,
+            'Only active managers can view purchase orders.'
+        )
+        return redirect('home')
+
+    orders = PurchaseOrder.objects.select_related(
+        'supplier',
+        'created_by'
+    ).annotate(
+        product_count=Count('lines')
+    ).order_by('-created_at', '-pk')
+
+    return render(
+        request,
+        'purchasing/purchase_order_list.html',
+        {
+            'orders': orders
+        }
+    )
+
+
+@login_required
+def purchase_order_detail(request, pk):
+    if not manager_allowed(request.user):
+        messages.error(
+            request,
+            'Only active managers can view purchase orders.'
+        )
+        return redirect('home')
+
+    order = get_object_or_404(
+        PurchaseOrder.objects.select_related(
+            'supplier',
+            'created_by'
+        ),
+        pk=pk
+    )
+
+    lines = order.lines.select_related('product').all()
+    order_items = []
+    order_total = Decimal('0.00')
+
+    for line in lines:
+        line_total = line.quantity_ordered * line.unit_cost
+        order_total += line_total
+
+        order_items.append({
+            'line': line,
+            'line_total': line_total
+        })
+
+    return render(
+        request,
+        'purchasing/purchase_order_detail.html',
+        {
+            'order': order,
+            'order_items': order_items,
+            'order_total': order_total
+        }
+    )
+
+
+@login_required
+@require_POST
+def purchase_order_status(request, pk):
+    if not manager_allowed(request.user):
+        messages.error(
+            request,
+            'Only active managers can change order status.'
+        )
+        return redirect('home')
+
+    new_status = request.POST.get('status', '')
+
+    try:
+        change_purchase_order_status(
+            order_id=pk,
+            new_status=new_status,
+            user=request.user
+        )
+
+    except ValueError as error:
+        messages.error(request, str(error))
+
+    else:
+        messages.success(
+            request,
+            'Purchase order status updated successfully.'
+        )
+
+    return redirect('purchase_order_detail', pk=pk)

@@ -13,13 +13,15 @@
         </p>
     </div>
 
-    <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+    <a href="{% url 'purchase_order_list' %}"
+       class="btn btn-outline-secondary">
         Back
     </a>
 </div>
 
 <form method="post" id="purchase-order-form">
     {% csrf_token %}
+    {{ form.po_number }}
 
     {% if form.non_field_errors %}
     <div class="alert alert-danger">
@@ -29,27 +31,16 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
+            <label for="{{ form.supplier.id_for_label }}"
+                   class="form-label fw-semibold">
+                Supplier
+            </label>
 
-            <div class="mb-3">
-                <label for="{{ form.po_number.id_for_label }}" class="form-label fw-semibold">
-                    Purchase Order Number
-                </label>
-                {{ form.po_number }}
-                <div class="text-danger small">
-                    {{ form.po_number.errors }}
-                </div>
+            {{ form.supplier }}
+
+            <div class="text-danger small">
+                {{ form.supplier.errors }}
             </div>
-
-            <div class="mb-3">
-                <label for="{{ form.supplier.id_for_label }}" class="form-label fw-semibold">
-                    Supplier
-                </label>
-                {{ form.supplier }}
-                <div class="text-danger small">
-                    {{ form.supplier.errors }}
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -57,7 +48,9 @@
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
             <h2 class="h5 mb-0">Order Items</h2>
 
-            <button type="button" id="add-item" class="btn btn-outline-primary btn-sm">
+            <button type="button"
+                    id="add-item"
+                    class="btn btn-outline-primary btn-sm">
                 + Add Item
             </button>
         </div>
@@ -70,15 +63,14 @@
                     <div class="row g-3 align-items-end">
 
                         <div class="col-md-5">
-                            <label for="{{ row.product.id_for_label }}" class="form-label fw-semibold">
+                            <label class="form-label fw-semibold">
                                 Product
                             </label>
 
-                            <select
-                                name="{{ row.product.html_name }}"
-                                id="{{ row.product.id_for_label }}"
-                                class="form-select product-select"
-                            >
+                            <select name="{{ row.product.html_name }}"
+                                    id="{{ row.product.id_for_label }}"
+                                    class="form-select product-select">
+
                                 {% for value, label in row.product.field.choices %}
                                 <option value="{{ value }}"
                                     {% if row.product.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
@@ -93,19 +85,17 @@
                         </div>
 
                         <div class="col-md-2">
-                            <label for="{{ row.quantity.id_for_label }}" class="form-label fw-semibold">
+                            <label class="form-label fw-semibold">
                                 Quantity
                             </label>
 
-                            <input
-                                type="number"
-                                name="{{ row.quantity.html_name }}"
-                                id="{{ row.quantity.id_for_label }}"
-                                class="form-control"
-                                min="1"
-                                step="1"
-                                value="{{ row.quantity.value|default_if_none:'' }}"
-                            >
+                            <input type="number"
+                                   name="{{ row.quantity.html_name }}"
+                                   id="{{ row.quantity.id_for_label }}"
+                                   class="form-control quantity-input"
+                                   min="1"
+                                   step="1"
+                                   value="{{ row.quantity.value|default_if_none:'' }}">
 
                             <div class="text-danger small">
                                 {{ row.quantity.errors }}
@@ -113,19 +103,18 @@
                         </div>
 
                         <div class="col-md-3">
-                            <label for="{{ row.unit_cost.id_for_label }}" class="form-label fw-semibold">
-                                Unit Cost
+                            <label class="form-label fw-semibold">
+                                Unit Cost (₹)
                             </label>
 
-                            <input
-                                type="number"
-                                name="{{ row.unit_cost.html_name }}"
-                                id="{{ row.unit_cost.id_for_label }}"
-                                class="form-control"
-                                min="0"
-                                step="0.01"
-                                value="{{ row.unit_cost.value|default_if_none:'' }}"
-                            >
+                            <input type="number"
+                                   name="{{ row.unit_cost.html_name }}"
+                                   id="{{ row.unit_cost.id_for_label }}"
+                                   class="form-control cost-input"
+                                   min="0"
+                                   max="99999999.99"
+                                   step="0.01"
+                                   value="{{ row.unit_cost.value|default_if_none:'' }}">
 
                             <div class="text-danger small">
                                 {{ row.unit_cost.errors }}
@@ -133,16 +122,58 @@
                         </div>
 
                         <div class="col-md-2 d-grid">
-                            <button type="button" class="btn btn-outline-danger remove-item">
+                            <button type="button"
+                                    class="btn btn-outline-danger remove-item">
                                 Remove
                             </button>
                         </div>
 
                     </div>
+
+                    <div class="row g-2 mt-3">
+                        <div class="col-sm-4">
+                            <div class="bg-light rounded p-2">
+                                <small class="text-secondary">
+                                    Current Stock
+                                </small>
+                                <div class="fw-semibold stock-value">—</div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-4">
+                            <div class="bg-light rounded p-2">
+                                <small class="text-secondary">
+                                    Safety Stock
+                                </small>
+                                <div class="fw-semibold safety-value">—</div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-4">
+                            <div class="bg-light rounded p-2">
+                                <small class="text-secondary">
+                                    Lead Time
+                                </small>
+                                <div class="fw-semibold lead-value">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        <span class="text-secondary">Line Total:</span>
+                        <strong class="line-total">₹0.00</strong>
+                    </div>
                 </div>
                 {% endfor %}
 
             </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0">Order Total</h2>
+            <span class="h4 mb-0" id="order-total">₹0.00</span>
         </div>
     </div>
 
@@ -156,11 +187,11 @@
             Create Purchase Order
         </button>
 
-        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+        <a href="{% url 'purchase_order_list' %}"
+           class="btn btn-outline-secondary">
             Cancel
         </a>
     </div>
-
 </form>
 
 <template id="item-template">
@@ -168,66 +199,90 @@
         <div class="row g-3 align-items-end">
 
             <div class="col-md-5">
-                <label for="id_product___INDEX__" class="form-label fw-semibold">
+                <label class="form-label fw-semibold">
                     Product
                 </label>
 
-                <select
-                    name="product___INDEX__"
-                    id="id_product___INDEX__"
-                    class="form-select product-select"
-                >
+                <select name="product___INDEX__"
+                        id="id_product___INDEX__"
+                        class="form-select product-select">
                     <option value="">Select Product</option>
 
                     {% for product in available_products %}
                     <option value="{{ product.pk }}">
-                        {{ product.name }}
+                        {{ product.name }} ({{ product.sku }})
                     </option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="col-md-2">
-                <label for="id_quantity___INDEX__" class="form-label fw-semibold">
+                <label class="form-label fw-semibold">
                     Quantity
                 </label>
 
-                <input
-                    type="number"
-                    name="quantity___INDEX__"
-                    id="id_quantity___INDEX__"
-                    class="form-control"
-                    min="1"
-                    step="1"
-                >
+                <input type="number"
+                       name="quantity___INDEX__"
+                       id="id_quantity___INDEX__"
+                       class="form-control quantity-input"
+                       min="1"
+                       step="1">
             </div>
 
             <div class="col-md-3">
-                <label for="id_unit_cost___INDEX__" class="form-label fw-semibold">
-                    Unit Cost
+                <label class="form-label fw-semibold">
+                    Unit Cost (₹)
                 </label>
 
-                <input
-                    type="number"
-                    name="unit_cost___INDEX__"
-                    id="id_unit_cost___INDEX__"
-                    class="form-control"
-                    min="0"
-                    step="0.01"
-                >
+                <input type="number"
+                       name="unit_cost___INDEX__"
+                       id="id_unit_cost___INDEX__"
+                       class="form-control cost-input"
+                       min="0"
+                       max="99999999.99"
+                       step="0.01">
             </div>
 
             <div class="col-md-2 d-grid">
-                <button type="button" class="btn btn-outline-danger remove-item">
+                <button type="button"
+                        class="btn btn-outline-danger remove-item">
                     Remove
                 </button>
             </div>
+        </div>
 
+        <div class="row g-2 mt-3">
+            <div class="col-sm-4">
+                <div class="bg-light rounded p-2">
+                    <small class="text-secondary">Current Stock</small>
+                    <div class="fw-semibold stock-value">—</div>
+                </div>
+            </div>
+
+            <div class="col-sm-4">
+                <div class="bg-light rounded p-2">
+                    <small class="text-secondary">Safety Stock</small>
+                    <div class="fw-semibold safety-value">—</div>
+                </div>
+            </div>
+
+            <div class="col-sm-4">
+                <div class="bg-light rounded p-2">
+                    <small class="text-secondary">Lead Time</small>
+                    <div class="fw-semibold lead-value">—</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end mt-3">
+            <span class="text-secondary">Line Total:</span>
+            <strong class="line-total">₹0.00</strong>
         </div>
     </div>
 </template>
 
 {{ product_suppliers|json_script:"product-supplier-data" }}
+{{ product_details|json_script:"product-details-data" }}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -240,42 +295,124 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('product-supplier-data').textContent
     );
 
+    const productDetails = JSON.parse(
+        document.getElementById('product-details-data').textContent
+    );
+
     let nextIndex = Number('{{ next_row_number }}');
 
+    // Save the complete product list before applying filters.
     const originalOptions = Array.from(
         document.querySelector('.product-select').options
     ).map(function (option) {
         return option.cloneNode(true);
     });
 
-    function filterProducts(resetSelection) {
-        const supplierId = supplierSelect.value;
+    function money(value) {
+        return '₹' + value.toFixed(2);
+    }
 
-        container.querySelectorAll('.product-select').forEach(
-            function (select) {
-                const selectedValue = resetSelection ? '' : select.value;
+    function updateRow(row) {
+        const productSelect = row.querySelector('.product-select');
+        const quantityInput = row.querySelector('.quantity-input');
+        const costInput = row.querySelector('.cost-input');
 
-                select.innerHTML = '';
+        const product = productDetails[productSelect.value];
 
-                originalOptions.forEach(function (option) {
-                    if (
-                        option.value === '' ||
-                        String(productSuppliers[option.value]) === supplierId
-                    ) {
-                        select.appendChild(option.cloneNode(true));
-                    }
-                });
+        row.querySelector('.stock-value').textContent =
+            product ? product.on_hand : '—';
 
-                const exists = Array.from(select.options).some(
-                    function (option) {
-                        return option.value === selectedValue;
-                    }
-                );
+        row.querySelector('.safety-value').textContent =
+            product ? product.safety_stock : '—';
 
-                select.value = exists ? selectedValue : '';
-                select.disabled = supplierId === '';
+        row.querySelector('.lead-value').textContent =
+            product ? product.lead_time_days + ' days' : '—';
+
+        const quantity = Number(quantityInput.value);
+        const cost = Number(costInput.value);
+
+        const validQuantity =
+            Number.isInteger(quantity) && quantity > 0;
+
+        const validCost =
+            costInput.value !== '' &&
+            Number.isFinite(cost) &&
+            cost >= 0;
+
+        const lineTotal =
+            validQuantity && validCost ? quantity * cost : 0;
+
+        row.querySelector('.line-total').textContent = money(lineTotal);
+
+        return lineTotal;
+    }
+
+    function updateTotals() {
+        let total = 0;
+
+        container.querySelectorAll('.order-item').forEach(
+            function (row) {
+                total += updateRow(row);
             }
         );
+
+        document.getElementById('order-total').textContent = money(total);
+    }
+
+    function filterProducts(resetSelection) {
+        const supplierId = supplierSelect.value;
+        const selects = Array.from(
+            container.querySelectorAll('.product-select')
+        );
+
+        if (resetSelection) {
+            selects.forEach(function (select) {
+                select.value = '';
+            });
+        }
+
+        // Record all products already selected.
+        const selections = selects.map(function (select) {
+            return select.value;
+        });
+
+        selects.forEach(function (select, index) {
+            const ownSelection = selections[index];
+
+            // Exclude products selected in other rows.
+            const selectedElsewhere = new Set(
+                selections.filter(function (value, otherIndex) {
+                    return otherIndex !== index && value !== '';
+                })
+            );
+
+            select.innerHTML = '';
+
+            originalOptions.forEach(function (option) {
+                const productId = option.value;
+
+                if (
+                    productId === '' ||
+                    (
+                        String(productSuppliers[productId]) === supplierId &&
+                        !selectedElsewhere.has(productId)
+                    )
+                ) {
+                    select.appendChild(option.cloneNode(true));
+                }
+            });
+
+            const exists = Array.from(select.options).some(
+                function (option) {
+                    return option.value === ownSelection;
+                }
+            );
+
+            select.value = exists ? ownSelection : '';
+            select.disabled = supplierId === '';
+        });
+
+        updateTotals();
     }
 
     function updateButtons() {
@@ -323,7 +460,23 @@ document.addEventListener('DOMContentLoaded', function () {
             event.target.closest('.order-item').remove();
         }
 
+        filterProducts(false);
         updateButtons();
+    });
+
+    container.addEventListener('change', function (event) {
+        if (event.target.classList.contains('product-select')) {
+            filterProducts(false);
+        }
+    });
+
+    container.addEventListener('input', function (event) {
+        if (
+            event.target.classList.contains('quantity-input') ||
+            event.target.classList.contains('cost-input')
+        ) {
+            updateTotals();
+        }
     });
 
     filterProducts(false);

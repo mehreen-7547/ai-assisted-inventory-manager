@@ -8,9 +8,12 @@ from .models import PurchaseOrder
 class PurchaseOrderForm(forms.Form):
     MAX_ROWS = 100
 
+    # Optional hidden field for compatibility with existing tests.
+    # The browser does not ask the Manager to enter this number.
     po_number = forms.CharField(
         max_length=20,
-        label='Purchase Order Number'
+        required=False,
+        widget=forms.HiddenInput()
     )
 
     supplier = forms.ModelChoiceField(
@@ -53,31 +56,28 @@ class PurchaseOrderForm(forms.Form):
             self.fields[f'product_{number}'] = forms.ModelChoiceField(
                 queryset=products,
                 required=False,
-                label='Product',
                 empty_label='Select Product'
             )
 
             self.fields[f'quantity_{number}'] = forms.IntegerField(
                 min_value=1,
-                required=False,
-                label='Quantity'
+                required=False
             )
 
             self.fields[f'unit_cost_{number}'] = forms.DecimalField(
                 min_value=0,
                 max_digits=10,
                 decimal_places=2,
-                required=False,
-                label='Unit Cost'
+                required=False
             )
 
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
 
     def clean_po_number(self):
-        po_number = self.cleaned_data['po_number'].strip()
+        po_number = self.cleaned_data.get('po_number', '').strip()
 
-        if PurchaseOrder.objects.filter(
+        if po_number and PurchaseOrder.objects.filter(
             po_number=po_number
         ).exists():
             raise forms.ValidationError(
