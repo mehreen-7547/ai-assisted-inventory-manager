@@ -236,3 +236,77 @@ def get_daily_sales_last_seven_days():
             item['bar_percent'] = 0
 
     return days
+
+
+
+def get_sales_staff_summary(user):
+    today = timezone.localdate()
+    seven_days_ago = today - timedelta(days=6)
+
+    completed_sales = Sale.objects.filter(
+        created_by=user,
+        status='completed'
+    )
+
+    today_sales = completed_sales.filter(
+        created_at__date=today
+    ).aggregate(
+        count=Count('id'),
+        total=Sum('total')
+    )
+
+    week_sales = completed_sales.filter(
+        created_at__date__gte=seven_days_ago,
+        created_at__date__lte=today
+    ).aggregate(
+        count=Count('id'),
+        total=Sum('total')
+    )
+
+    out_of_stock_count = Product.objects.filter(
+        is_active=True,
+        supplier__is_active=True,
+        on_hand=0
+    ).count()
+
+    return {
+        'today_count': today_sales['count'],
+        'today_total': (
+            today_sales['total'] or Decimal('0.00')
+        ),
+        'week_count': week_sales['count'],
+        'week_total': (
+            week_sales['total'] or Decimal('0.00')
+        ),
+        'out_of_stock_count': out_of_stock_count
+    }
+
+
+def get_sales_staff_recent_sales(user):
+    return list(
+        Sale.objects.filter(
+            created_by=user
+        ).order_by(
+            '-created_at',
+            '-pk'
+        )[:8]
+    )
+
+
+def get_sales_staff_stock_alerts():
+    return list(
+        Product.objects.filter(
+            is_active=True,
+            supplier__is_active=True
+        ).filter(
+            Q(on_hand=0)
+            | Q(
+                on_hand__gt=0,
+                on_hand__lte=F('safety_stock')
+            )
+        ).order_by(
+            'on_hand',
+            'name',
+            'pk'
+        )[:8]
+    )

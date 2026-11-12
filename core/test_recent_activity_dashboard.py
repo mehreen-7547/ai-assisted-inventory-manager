@@ -175,23 +175,54 @@ class RecentActivityDashboardTests(TestCase):
         self.assertContains(response, 'SALE-VOIDED')
         self.assertContains(response, 'Voided')
 
-    def test_sales_staff_cannot_see_manager_activity(self):
-        self.create_movement()
-        self.create_sale('SALE-PRIVATE')
 
-        self.client.force_login(self.sales_user)
-        response = self.client.get(reverse('home'))
+def test_sales_staff_cannot_see_manager_activity(self):
+    self.create_movement()
+    self.create_sale('SALE-PRIVATE')
 
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(
-            response,
-            'Recent Stock Movements'
-        )
-        self.assertNotContains(
-            response,
-            'Recent Sales'
-        )
-        self.assertNotContains(response, 'SALE-PRIVATE')
+    Sale.objects.create(
+        sale_number='MANAGER-ONLY-SALE',
+        submission_key='manager-only-activity',
+        created_by=self.manager,
+        subtotal=Decimal('50.00'),
+        total=Decimal('50.00')
+    )
+
+    self.client.force_login(self.sales_user)
+    response = self.client.get(reverse('home'))
+
+    self.assertEqual(response.status_code, 200)
+
+    self.assertNotContains(
+        response,
+        'Recent Stock Movements'
+    )
+
+    self.assertNotIn(
+        'recent_stock_movements',
+        response.context
+    )
+
+    self.assertNotIn(
+        'recent_sales',
+        response.context
+    )
+
+    self.assertContains(
+        response,
+        'My Recent Sales'
+    )
+
+    self.assertContains(
+        response,
+        'SALE-PRIVATE'
+    )
+
+    self.assertNotContains(
+        response,
+        'MANAGER-ONLY-SALE'
+    )
+
 
     def test_admin_cannot_see_manager_activity(self):
         self.create_movement()

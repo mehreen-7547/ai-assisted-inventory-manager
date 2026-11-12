@@ -508,6 +508,158 @@
             </a>
         </div>
 
+
+        <div class="row g-3 mt-3">
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">My Sales Today</h3>
+                        <p class="h5">
+                            ₹{{ sales_staff_summary.today_total|floatformat:2 }}
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            {{ sales_staff_summary.today_count }} completed sales
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">My Sales Last 7 Days</h3>
+                        <p class="h5">
+                            ₹{{ sales_staff_summary.week_total|floatformat:2 }}
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            {{ sales_staff_summary.week_count }} completed sales
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Out-of-stock Products</h3>
+                        <p class="h3">
+                            {{ sales_staff_summary.out_of_stock_count }}
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            Active products currently unavailable.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">My Recent Sales</h3>
+            </div>
+
+            <div class="card-body">
+                {% if sales_staff_recent_sales %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Sale Number</th>
+                                <th>Date and Time</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for sale in sales_staff_recent_sales %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'sale_detail' sale.pk %}">
+                                        {{ sale.sale_number }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {{ sale.created_at|date:"d M Y, h:i A" }}
+                                </td>
+                                <td>
+                                    ₹{{ sale.total|floatformat:2 }}
+                                </td>
+                                <td>
+                                    {% if sale.status == 'voided' %}
+                                    <span class="badge bg-danger">
+                                        Voided
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-success">
+                                        Completed
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    You have not recorded any sales yet.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">
+                    Products Needing Stock Attention
+                </h3>
+            </div>
+
+            <div class="card-body">
+                {% if sales_staff_stock_alerts %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>On Hand</th>
+                                <th>Stock Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for product in sales_staff_stock_alerts %}
+                            <tr class="{% if product.on_hand == 0 %}table-danger{% else %}table-warning{% endif %}">
+                                <td>{{ product.name }}</td>
+                                <td>{{ product.on_hand }}</td>
+                                <td>
+                                    {% if product.on_hand == 0 %}
+                                    <span class="badge bg-danger">
+                                        Out of Stock
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">
+                                        Low Stock
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    No products currently need stock attention.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+
         {% endif %}
     </div>
 </div>
