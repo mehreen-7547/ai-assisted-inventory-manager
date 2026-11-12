@@ -215,6 +215,66 @@
         </div>
 
 
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">
+                    Purchase Orders Needing Attention
+                </h3>
+            </div>
+
+            <div class="card-body">
+                {% if purchase_orders_attention %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>PO Number</th>
+                                <th>Supplier</th>
+                                <th>Expected Delivery</th>
+                                <th>Status</th>
+                                <th>Days Overdue</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for item in purchase_orders_attention %}
+                            <tr class="{% if item.days_overdue > 0 %}table-danger{% endif %}">
+                                <td>
+                                    <a href="{% url 'purchase_order_detail' item.order.pk %}">
+                                        {{ item.order.po_number }}
+                                    </a>
+                                </td>
+                                <td>{{ item.order.supplier.name }}</td>
+                                <td>
+                                    {% if item.order.expected_delivery_date %}
+                                        {{ item.order.expected_delivery_date|date:"d M Y" }}
+                                    {% else %}
+                                        Not set
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.order.get_status_display }}</td>
+                                <td>
+                                    {% if item.days_overdue > 0 %}
+                                        {{ item.days_overdue }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    No open purchase orders need attention.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+
         {% elif request.user.role == 'sales' %}
 
         <h2 class="h5 mb-3">Sales Staff Dashboard</h2>

@@ -89,3 +89,37 @@ def get_low_stock_products():
             'on_hand', 'name', 'pk'
         )[:10]
     )
+
+
+
+def get_purchase_orders_needing_attention():
+    today = timezone.localdate()
+
+    orders = PurchaseOrder.objects.filter(
+        supplier__is_active=True,
+        status__in=['ordered', 'partially_received']
+    ).select_related('supplier').order_by(
+        F('expected_delivery_date').asc(nulls_last=True),
+        'created_at',
+        'pk'
+    )[:5]
+
+    results = []
+
+    for order in orders:
+        days_overdue = 0
+
+        if (
+            order.expected_delivery_date
+            and order.expected_delivery_date < today
+        ):
+            days_overdue = (
+                today - order.expected_delivery_date
+            ).days
+
+        results.append({
+            'order': order,
+            'days_overdue': days_overdue
+        })
+
+    return results
