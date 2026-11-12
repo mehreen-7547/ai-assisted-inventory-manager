@@ -62,6 +62,113 @@
             </a>
         </div>
 
+
+        <div class="row g-3 mt-3">
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Low-stock Products</h3>
+                        <p class="h3">
+                            {{ manager_summary.low_stock_count }}
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            {% if manager_summary.low_stock_count == 0 %}
+                                No low-stock products.
+                            {% else %}
+                                Active products running low.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Out-of-stock Products</h3>
+                        <p class="h3">
+                            {{ manager_summary.out_of_stock_count }}
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            {% if manager_summary.out_of_stock_count == 0 %}
+                                No out-of-stock products.
+                            {% else %}
+                                Active products with zero stock.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Sales Today</h3>
+                        <p class="h5">
+                            ₹{{ manager_summary.sales_today_total|floatformat:2 }}
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            {{ manager_summary.sales_today_count }} completed sales
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Sales Last 7 Days</h3>
+                        <p class="h5">
+                            ₹{{ manager_summary.sales_week_total|floatformat:2 }}
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            {{ manager_summary.sales_week_count }} completed sales
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Open Purchase Orders</h3>
+                        <p class="h3">
+                            {{ manager_summary.open_orders_count }}
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            {% if manager_summary.open_orders_count == 0 %}
+                                No open purchase orders.
+                            {% else %}
+                                Ordered or partially received.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Overdue Purchase Orders</h3>
+                        <p class="h3">
+                            {{ manager_summary.overdue_orders_count }}
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            {% if manager_summary.overdue_orders_count == 0 %}
+                                No overdue purchase orders.
+                            {% else %}
+                                Open orders past their expected date.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+
         {% elif request.user.role == 'sales' %}
 
         <h2 class="h5 mb-3">Sales Staff Dashboard</h2>
