@@ -70,3 +70,22 @@ def get_manager_summary():
         'open_orders_count': open_orders.count(),
         'overdue_orders_count': overdue_orders.count()
     }
+
+
+
+
+def get_low_stock_products():
+    return list(
+        Product.objects.filter(
+            is_active=True,
+            supplier__is_active=True
+        ).filter(
+            Q(on_hand=0)
+            | Q(
+                on_hand__gt=0,
+                on_hand__lte=F('safety_stock')
+            )
+        ).select_related('supplier').order_by(
+            'on_hand', 'name', 'pk'
+        )[:10]
+    )

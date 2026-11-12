@@ -169,6 +169,52 @@
 
 
 
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">
+                    Low-stock and Out-of-stock Products
+                </h3>
+            </div>
+
+            <div class="card-body">
+                {% if low_stock_products %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Name</th>
+                                <th>Supplier</th>
+                                <th>On Hand</th>
+                                <th>Safety Stock</th>
+                                <th>Lead Time Days</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for product in low_stock_products %}
+                            <tr class="{% if product.on_hand == 0 %}table-danger{% else %}table-warning{% endif %}">
+                                <td>{{ product.sku }}</td>
+                                <td>{{ product.name }}</td>
+                                <td>{{ product.supplier.name }}</td>
+                                <td>{{ product.on_hand }}</td>
+                                <td>{{ product.safety_stock }}</td>
+                                <td>{{ product.lead_time_days }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    No low-stock or out-of-stock products.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+
         {% elif request.user.role == 'sales' %}
 
         <h2 class="h5 mb-3">Sales Staff Dashboard</h2>
