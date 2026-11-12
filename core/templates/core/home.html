@@ -275,6 +275,116 @@
         </div>
 
 
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">Recent Stock Movements</h3>
+            </div>
+
+            <div class="card-body">
+                {% if recent_stock_movements %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Product</th>
+                                <th>Movement Type</th>
+                                <th>Quantity Change</th>
+                                <th>Done By</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for movement in recent_stock_movements %}
+                            <tr>
+                                <td>
+                                    {{ movement.created_at|date:"d M Y, h:i A" }}
+                                </td>
+                                <td>{{ movement.product.name }}</td>
+                                <td>
+                                    {{ movement.get_movement_type_display }}
+                                </td>
+                                <td>
+                                    {% if movement.quantity_delta > 0 %}
+                                    <span class="text-success fw-semibold">
+                                        +{{ movement.quantity_delta }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-danger fw-semibold">
+                                        {{ movement.quantity_delta }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ movement.created_by.username }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    No stock movements recorded yet.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">Recent Sales</h3>
+            </div>
+
+            <div class="card-body">
+                {% if recent_sales %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Sale Number</th>
+                                <th>Time</th>
+                                <th>Total</th>
+                                <th>Staff</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for sale in recent_sales %}
+                            <tr>
+                                <td>{{ sale.sale_number }}</td>
+                                <td>
+                                    {{ sale.created_at|date:"d M Y, h:i A" }}
+                                </td>
+                                <td>
+                                    ₹{{ sale.total|floatformat:2 }}
+                                </td>
+                                <td>{{ sale.created_by.username }}</td>
+                                <td>
+                                    {% if sale.status == 'voided' %}
+                                    <span class="badge bg-danger">
+                                        Voided
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-success">
+                                        Completed
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    No sales recorded yet.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+
         {% elif request.user.role == 'sales' %}
 
         <h2 class="h5 mb-3">Sales Staff Dashboard</h2>

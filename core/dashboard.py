@@ -1,4 +1,3 @@
-
 from datetime import timedelta
 from decimal import Decimal
 
@@ -8,6 +7,8 @@ from django.utils import timezone
 from catalog.models import Product
 from purchasing.models import PurchaseOrder
 from sales.models import Sale
+
+from inventory.models import StockMovement
 
 
 def get_manager_summary():
@@ -123,3 +124,30 @@ def get_purchase_orders_needing_attention():
         })
 
     return results
+
+
+
+def get_recent_stock_movements():
+    return list(
+        StockMovement.objects.filter(
+            product__is_active=True,
+            product__supplier__is_active=True
+        ).select_related(
+            'product',
+            'created_by'
+        ).order_by(
+            '-created_at',
+            '-pk'
+        )[:8]
+    )
+
+
+def get_recent_sales():
+    return list(
+        Sale.objects.select_related(
+            'created_by'
+        ).order_by(
+            '-created_at',
+            '-pk'
+        )[:5]
+    )
