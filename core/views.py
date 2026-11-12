@@ -12,7 +12,10 @@ from .dashboard import (
     get_daily_sales_last_seven_days,
     get_sales_staff_summary,
     get_sales_staff_recent_sales,
-    get_sales_staff_stock_alerts
+    get_sales_staff_stock_alerts,
+    get_admin_summary,
+    get_pending_password_setup,
+    get_recent_users
 )
 
 
@@ -62,5 +65,14 @@ def home(request):
         context['sales_staff_stock_alerts'] = (
             get_sales_staff_stock_alerts()
         )
+
+    elif request.user.role == 'admin':
+        context['admin_summary'] = get_admin_summary()
+
+        context['pending_password_setup'] = (
+            get_pending_password_setup()
+        )
+
+        context['recent_users'] = get_recent_users()
 
     return render(request, 'core/home.html', context)

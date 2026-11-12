@@ -32,6 +32,171 @@
             {% endif %}
         </div>
 
+
+        <div class="row g-3 mt-3">
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Active Accounts</h3>
+                        <p class="h3 mb-0">
+                            {{ admin_summary.active_count }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Active Accounts by Role</h3>
+                        <p class="small mb-1">
+                            Admin: {{ admin_summary.active_admin_count }}
+                        </p>
+                        <p class="small mb-1">
+                            Manager: {{ admin_summary.active_manager_count }}
+                        </p>
+                        <p class="small mb-0">
+                            Sales: {{ admin_summary.active_sales_count }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Deactivated Accounts</h3>
+                        <p class="h3 mb-0">
+                            {{ admin_summary.inactive_count }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="h6">Pending Password Setup</h3>
+                        <p class="h3 mb-0">
+                            {{ admin_summary.pending_setup_count }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">
+                    Employees Awaiting Password Setup
+                </h3>
+            </div>
+
+            <div class="card-body">
+                {% if pending_password_setup %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for employee in pending_password_setup %}
+                            <tr>
+                                <td>{{ employee.username }}</td>
+                                <td>{{ employee.email }}</td>
+                                <td>
+                                    {{ employee.get_role_display }}
+                                </td>
+                                <td>
+                                    <form
+                                        method="post"
+                                        action="{% url 'resend_setup_email' employee.pk %}"
+                                    >
+                                        {% csrf_token %}
+                                        <button
+                                            type="submit"
+                                            class="btn btn-outline-primary btn-sm"
+                                        >
+                                            Resend Setup Email
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    No active employees are awaiting password setup.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">
+                    Recently Added Accounts
+                </h3>
+            </div>
+
+            <div class="card-body">
+                {% if recent_users %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Date Joined</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for employee in recent_users %}
+                            <tr>
+                                <td>{{ employee.username }}</td>
+                                <td>
+                                    {{ employee.get_role_display }}
+                                </td>
+                                <td>
+                                    {{ employee.date_joined|date:"d M Y, h:i A" }}
+                                </td>
+                                <td>
+                                    {% if employee.is_active %}
+                                    <span class="badge bg-success">
+                                        Active
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                        Deactivated
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    No accounts found.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+
         {% elif request.user.role == 'manager' %}
 
         <h2 class="h5 mb-3">Inventory Manager Dashboard</h2>

@@ -13,6 +13,11 @@ from django.db.models.functions import TruncDate
 from sales.models import Sale, SaleLine
 
 
+from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
+from accounts.models import CustomUser
+
+
+
 
 def get_manager_summary():
     today = timezone.localdate()
@@ -309,4 +314,55 @@ def get_sales_staff_stock_alerts():
             'name',
             'pk'
         )[:8]
+    )
+
+
+
+def get_admin_summary():
+    active_users = CustomUser.objects.filter(
+        is_active=True
+    )
+
+    pending_setup = active_users.filter(
+        role__in=['manager', 'sales'],
+        password__startswith=UNUSABLE_PASSWORD_PREFIX
+    )
+
+    return {
+        'active_count': active_users.count(),
+        'active_admin_count': active_users.filter(
+            role='admin'
+        ).count(),
+        'active_manager_count': active_users.filter(
+            role='manager'
+        ).count(),
+        'active_sales_count': active_users.filter(
+            role='sales'
+        ).count(),
+        'inactive_count': CustomUser.objects.filter(
+            is_active=False
+        ).count(),
+        'pending_setup_count': pending_setup.count()
+    }
+
+
+def get_pending_password_setup():
+    return list(
+        CustomUser.objects.filter(
+            is_active=True,
+            role__in=['manager', 'sales'],
+            password__startswith=UNUSABLE_PASSWORD_PREFIX
+        ).order_by(
+            'date_joined',
+            'pk'
+        )
+    )
+
+
+def get_recent_users():
+    return list(
+        CustomUser.objects.order_by(
+            '-date_joined',
+            '-pk'
+        )[:5]
     )
