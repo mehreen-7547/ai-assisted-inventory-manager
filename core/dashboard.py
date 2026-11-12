@@ -6,9 +6,12 @@ from django.utils import timezone
 
 from catalog.models import Product
 from purchasing.models import PurchaseOrder
-from sales.models import Sale
 
 from inventory.models import StockMovement
+
+from django.db.models.functions import TruncDate
+from sales.models import Sale, SaleLine
+
 
 
 def get_manager_summary():
@@ -151,3 +154,85 @@ def get_recent_sales():
             '-pk'
         )[:5]
     )
+
+
+
+def get_top_selling_products():
+    today = timezone.localdate()
+    start_date = today - timedelta(days=29)
+
+    return list(
+        SaleLine.objects.filter(
+            sale__status='completed',
+            sale__created_at__date__gte=start_date,
+            sale__created_at__date__lte=today,
+            product__is_active=True,
+            product__supplier__is_active=True
+        ).values(
+            'product_id',
+            product_label=F('product__name')
+        ).annotate(
+            units_sold=Sum('quantity'),
+            gross_revenue=Sum('line_total')
+        ).order_by(
+            '-units_sold',
+            'product_label',
+            'product_id'
+        )[:5]
+    )
+
+
+def get_daily_sales_last_seven_days():
+    today = timezone.localdate()
+    start_date = today - timedelta(days=6)
+
+    sales_by_day = (
+        Sale.objects.filter(
+            status='completed',
+            created_at__date__gte=start_date,
+            created_at__date__lte=today
+        ).annotate(
+            sale_date=TruncDate('created_at')
+        ).values(
+            'sale_date'
+        ).annotate(
+            sales_count=Count('id'),
+            total=Sum('total')
+        ).order_by('sale_date')
+    )
+
+    totals = {
+        item['sale_date']: item
+        for item in sales_by_day
+    }
+
+    days = []
+
+    for number in range(7):
+        day = start_date + timedelta(days=number)
+        item = totals.get(day)
+
+        days.append({
+            'date': day,
+            'sales_count': (
+                item['sales_count'] if item else 0
+            ),
+            'total': (
+                item['total'] if item
+                else Decimal('0.00')
+            )
+        })
+
+    highest_total = max(
+        item['total'] for item in days
+    )
+
+    for item in days:
+        if highest_total > 0:
+            item['bar_percent'] = int(
+                item['total'] * 100 / highest_total
+            )
+        else:
+            item['bar_percent'] = 0
+
+    return days

@@ -385,6 +385,111 @@
         </div>
 
 
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">
+                    Top-selling Products (Last 30 Days)
+                </h3>
+            </div>
+
+            <div class="card-body">
+                {% if top_selling_products %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Units Sold</th>
+                                <th>Gross Revenue (Before Discounts)</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for item in top_selling_products %}
+                            <tr>
+                                <td>{{ item.product_label }}</td>
+                                <td>{{ item.units_sold }}</td>
+                                <td>
+                                    ₹{{ item.gross_revenue|floatformat:2 }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    No completed product sales in the last 30 days.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h3 class="h5 mb-0">
+                    Daily Sales (Last 7 Days)
+                </h3>
+            </div>
+
+            <div class="card-body">
+                {% if daily_sales_has_data %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Completed Sales</th>
+                                <th>Total Revenue</th>
+                                <th>Sales Activity</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for item in daily_sales %}
+                            <tr>
+                                <td>
+                                    {{ item.date|date:"d M Y" }}
+                                </td>
+                                <td>{{ item.sales_count }}</td>
+                                <td>
+                                    ₹{{ item.total|floatformat:2 }}
+                                </td>
+                                <td style="min-width: 170px;">
+                                    <div
+                                        class="progress"
+                                        role="progressbar"
+                                        aria-label="Daily sales relative to highest day"
+                                        aria-valuenow="{{ item.bar_percent }}"
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"
+                                    >
+                                        <div
+                                            class="progress-bar"
+                                            style="width: {{ item.bar_percent }}%;">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="small text-secondary mb-0">
+                    Bars compare daily revenue with the
+                    highest-revenue day in this 7-day period.
+                </p>
+                {% else %}
+                <p class="text-secondary mb-0">
+                    No completed sales in the last 7 days.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+
         {% elif request.user.role == 'sales' %}
 
         <h2 class="h5 mb-3">Sales Staff Dashboard</h2>
