@@ -218,3 +218,69 @@ class DailySalesTests(TestCase):
             second_product_units,
             [0, 0, 0]
         )
+
+
+    def test_sync_replaces_imported_history(self):
+        DailySales.objects.create(
+            product=self.product,
+            date=self.start_date,
+            units_sold=8,
+            gross_revenue=Decimal('400.00'),
+            source='imported'
+        )
+
+        self.create_test_sale(
+            1, self.start_date, 3
+        )
+
+        save_product_daily_sales(
+            self.product.pk,
+            self.start_date,
+            self.start_date
+        )
+
+        record = DailySales.objects.get()
+
+        self.assertEqual(record.units_sold, 3)
+        self.assertEqual(
+            record.gross_revenue,
+            Decimal('150.00')
+        )
+        self.assertEqual(record.source, 'recorded')
+
+    def test_sync_preserves_imported_history_outside_range(self):
+        old_date = self.start_date - timedelta(days=1)
+
+        DailySales.objects.create(
+            product=self.product,
+            date=old_date,
+            units_sold=8,
+            gross_revenue=Decimal('400.00'),
+            source='imported'
+        )
+
+        save_product_daily_sales(
+            self.product.pk,
+            self.start_date,
+            self.today
+        )
+
+        record = DailySales.objects.get(
+            product=self.product,
+            date=old_date
+        )
+
+        self.assertEqual(record.units_sold, 8)
+        self.assertEqual(record.source, 'imported')
+
+    def test_sync_marks_zero_sales_day_as_recorded(self):
+        save_product_daily_sales(
+            self.product.pk,
+            self.start_date,
+            self.start_date
+        )
+
+        record = DailySales.objects.get()
+
+        self.assertEqual(record.units_sold, 0)
+        self.assertEqual(record.source, 'recorded')

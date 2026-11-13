@@ -21,6 +21,17 @@ class DailySales(models.Model):
         default=0
     )
 
+
+    source = models.CharField(
+        max_length=10,
+        choices=[
+            ('recorded', 'Recorded Sales'),
+            ('imported', 'CSV Import')
+        ],
+        default='recorded'
+    )
+
+
     class Meta:
         constraints = [
             models.UniqueConstraint(

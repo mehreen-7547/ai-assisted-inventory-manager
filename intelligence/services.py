@@ -90,10 +90,13 @@ def save_product_daily_sales(product_id, start_date, end_date):
             DailySales.objects.update_or_create(
                 product=product,
                 date=row['date'],
+
                 defaults={
                     'units_sold': row['units_sold'],
-                    'gross_revenue': row['gross_revenue']
+                    'gross_revenue': row['gross_revenue'],
+                    'source': 'recorded'
                 }
+
             )
 
     return len(daily_data)
@@ -165,17 +168,29 @@ def import_historical_daily_sales(csv_text):
         )
     }
 
+
     with transaction.atomic():
 
         for row in validated_rows:
+            product = products[row['sku']]
+
+            existing = DailySales.objects.filter(
+                product=product,
+                date=row['date']
+            ).first()
+
+            if existing and existing.source == 'recorded':
+                continue
+
             DailySales.objects.update_or_create(
-                product=products[row['sku']],
+                product=product,
                 date=row['date'],
                 defaults={
                     'units_sold': row['units_sold'],
-                    'gross_revenue': row['gross_revenue']
+                    'gross_revenue': row['gross_revenue'],
+                    'source': 'imported'
                 }
             )
 
-    return len(validated_rows)
 
+    return len(validated_rows)

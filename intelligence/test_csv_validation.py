@@ -243,7 +243,7 @@ class HistoricalSalesImportTests(TestCase):
             original_stock
         )
 
-    
+
     def test_database_failure_rolls_back_import(self):
         csv_text = (
             'date,sku,units_sold,gross_revenue\n'
@@ -276,7 +276,7 @@ class HistoricalSalesImportTests(TestCase):
             0
         )
 
-    
+
     def test_header_only_csv_is_rejected(self):
         csv_text = (
             'date,sku,units_sold,gross_revenue\n'
@@ -291,7 +291,7 @@ class HistoricalSalesImportTests(TestCase):
         )
 
 
-    
+
     def test_import_multiple_products(self):
         second_product = Product.objects.create(
             sku='IMP-002',
@@ -333,4 +333,59 @@ class HistoricalSalesImportTests(TestCase):
         )
 
 
+    def test_import_marks_source_as_imported(self):
+        csv_text = (
+            'date,sku,units_sold,gross_revenue\n'
+            '2025-11-10,IMP-001,3,150.00\n'
+        )
 
+        import_historical_daily_sales(csv_text)
+
+        record = DailySales.objects.get()
+        self.assertEqual(record.source, 'imported')
+
+    def test_import_cannot_overwrite_recorded_sales(self):
+        DailySales.objects.create(
+            product=self.product,
+            date=date(2025, 11, 10),
+            units_sold=2,
+            gross_revenue=Decimal('100.00'),
+            source='recorded'
+        )
+
+        csv_text = (
+            'date,sku,units_sold,gross_revenue\n'
+            '2025-11-10,IMP-001,8,400.00\n'
+        )
+
+        import_historical_daily_sales(csv_text)
+
+        record = DailySales.objects.get()
+
+        self.assertEqual(record.units_sold, 2)
+        self.assertEqual(
+            record.gross_revenue,
+            Decimal('100.00')
+        )
+        self.assertEqual(record.source, 'recorded')
+
+    def test_import_cannot_overwrite_recorded_zero_day(self):
+        DailySales.objects.create(
+            product=self.product,
+            date=date(2025, 11, 10),
+            units_sold=0,
+            gross_revenue=Decimal('0.00'),
+            source='recorded'
+        )
+
+        csv_text = (
+            'date,sku,units_sold,gross_revenue\n'
+            '2025-11-10,IMP-001,8,400.00\n'
+        )
+
+        import_historical_daily_sales(csv_text)
+
+        record = DailySales.objects.get()
+
+        self.assertEqual(record.units_sold, 0)
+        self.assertEqual(record.source, 'recorded')
