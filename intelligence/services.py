@@ -139,3 +139,43 @@ def save_all_product_daily_sales():
         'end_date': end_date,
         'records': total_records
     }
+
+
+
+def import_historical_daily_sales(csv_text):
+
+    from .csv_validation import (
+        validate_daily_sales_csv,
+        validate_product_skus
+    )
+
+    validated_rows = validate_daily_sales_csv(csv_text)
+
+    validate_product_skus(validated_rows)
+
+    skus = {
+        row['sku']
+        for row in validated_rows
+    }
+
+    products = {
+        product.sku: product
+        for product in Product.objects.filter(
+            sku__in=skus
+        )
+    }
+
+    with transaction.atomic():
+
+        for row in validated_rows:
+            DailySales.objects.update_or_create(
+                product=products[row['sku']],
+                date=row['date'],
+                defaults={
+                    'units_sold': row['units_sold'],
+                    'gross_revenue': row['gross_revenue']
+                }
+            )
+
+    return len(validated_rows)
+

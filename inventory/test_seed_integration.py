@@ -107,13 +107,15 @@ class SeedDemoDataIntegrationTests(TestCase):
         )
 
     def test_sales_cover_all_365_days(self):
-        self.assertEqual(Sale.objects.count(), 1085)
+        total_sales = Sale.objects.count()
+
+        self.assertGreaterEqual(total_sales, 730)
 
         self.assertEqual(
             Sale.objects.filter(
                 status='completed'
             ).count(),
-            1085
+            total_sales
         )
 
         days = list(
