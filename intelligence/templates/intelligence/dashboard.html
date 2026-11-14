@@ -1,0 +1,243 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Demand Intelligence{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-3">Demand Intelligence</h2>
+
+<p class="text-secondary">
+    Select a product to view its demand and stock analysis.
+</p>
+
+<form method="get" class="mb-4">
+    <label for="product" class="form-label">
+        Product
+    </label>
+
+    <select
+        name="product"
+        id="product"
+        class="form-select mb-3"
+        required
+    >
+        <option value="">Select a product</option>
+
+        {% for product in products %}
+        <option
+            value="{{ product.pk }}"
+            {% if selected_product.pk == product.pk %}
+            selected
+            {% endif %}
+        >
+            {{ product.name }} ({{ product.sku }})
+        </option>
+        {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-primary">
+        Analyze Product
+    </button>
+</form>
+
+{% if errors.selection %}
+<div class="alert alert-warning">
+    {{ errors.selection }}
+</div>
+{% endif %}
+
+{% if selected_product %}
+
+<h3 class="h5 mb-3">
+    Analysis: {{ selected_product.name }}
+</h3>
+
+<p class="text-secondary">
+    Current stock: {{ selected_product.on_hand }}
+    | Safety stock: {{ selected_product.safety_stock }}
+</p>
+
+<div class="row g-3">
+
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="h6">Demand Forecast</h4>
+
+                {% if results.forecast %}
+                    <p>
+                        Forecast period:
+                        {{ results.forecast.forecast_days }} days
+                    </p>
+
+                    <p>
+                        Model: {{ results.forecast.model }}
+                    </p>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Low</th>
+                                    <th>Expected</th>
+                                    <th>High</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for day in results.forecast.predictions %}
+                                <tr>
+                                    <td>{{ day.date }}</td>
+                                    <td>{{ day.p10 }}</td>
+                                    <td>{{ day.p50 }}</td>
+                                    <td>{{ day.p90 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-secondary">
+                        {{ errors.forecast|default:"No forecast available." }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="h6">Stock-Shortage Prediction</h4>
+
+                {% if results.shortage %}
+                    <p>
+                        First safety-stock breach:
+                        {{ results.shortage.first_safety_breach|default:"None predicted" }}
+                    </p>
+
+                    <p>
+                        First stockout:
+                        {{ results.shortage.first_stockout|default:"None predicted" }}
+                    </p>
+
+                    <p>
+                        Overdue incoming:
+                        {{ results.shortage.overdue_incoming }}
+                    </p>
+
+                    <p>
+                        Unscheduled incoming:
+                        {{ results.shortage.unscheduled_incoming }}
+                    </p>
+                {% else %}
+                    <p class="text-secondary">
+                        {{ errors.shortage|default:"No shortage prediction available." }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="h6">Reorder Recommendation</h4>
+
+                {% if results.reorder %}
+                    {% if results.reorder.status == 'available' %}
+                        <p>
+                            Recommended quantity:
+                            <strong>
+                                {{ results.reorder.reorder_quantity }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Method: {{ results.reorder.method }}
+                        </p>
+
+                        <p>{{ results.reorder.reason }}</p>
+
+                        <p>
+                            Scheduled incoming:
+                            {{ results.reorder.scheduled_incoming }}
+                        </p>
+                    {% else %}
+                        <p class="text-secondary">
+                            {{ results.reorder.reason }}
+                        </p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-secondary">
+                        {{ errors.reorder|default:"No recommendation available." }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="h6">Unusual Sales Patterns</h4>
+
+                {% if results.anomalies %}
+                    <p>
+                        Anomalies detected:
+                        {{ results.anomalies.anomaly_count }}
+                    </p>
+
+                    <p>
+                        Days analyzed:
+                        {{ results.anomalies.analyzed_days }}
+                    </p>
+
+                    {% for anomaly in results.anomalies.anomalies %}
+                        <div class="border-bottom mb-2 pb-2">
+                            <strong>{{ anomaly.date }}</strong>
+
+                            <p class="mb-1">
+                                {{ anomaly.explanation }}
+                            </p>
+
+                            <small>
+                                Actual: {{ anomaly.actual_sales }}
+                                | Average: {{ anomaly.average_sales }}
+                            </small>
+                        </div>
+                    {% empty %}
+                        <p>No unusual sales patterns detected.</p>
+                    {% endfor %}
+
+                    {% if results.anomalies.skipped_days %}
+                        <p class="text-secondary small">
+                            Some days could not be analyzed
+                            because sales history was incomplete.
+                        </p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-secondary">
+                        {{ errors.anomalies|default:"No anomaly analysis available." }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<p class="text-secondary small mt-3">
+    These are decision-support estimates.
+    No purchase orders or stock adjustments are made automatically.
+</p>
+
+{% endif %}
+
+<a href="{% url 'home' %}"
+   class="btn btn-outline-secondary mt-3">
+    Back to Dashboard
+</a>
+
+{% endblock %}
