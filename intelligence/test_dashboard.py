@@ -8,6 +8,10 @@ from django.urls import reverse
 
 from catalog.models import Product, Supplier
 
+from datetime import timedelta
+from django.utils import timezone
+from intelligence.models import DailySales
+
 
 class IntelligenceDashboardTests(TestCase):
 
@@ -212,3 +216,35 @@ class IntelligenceDashboardTests(TestCase):
             response,
             'No unusual sales patterns detected.'
         )
+
+
+    @patch('intelligence.views.detect_sales_anomalies')
+    @patch('intelligence.views.recommend_reorder_quantity')
+    @patch('intelligence.views.predict_stock_shortage')
+    @patch('intelligence.views.forecast_product_demand')
+    def test_dashboard_uses_latest_sales_date(
+        self, forecast, shortage, reorder, anomalies
+    ):
+        yesterday = timezone.localdate() - timedelta(days=1)
+
+        DailySales.objects.create(
+            product=self.product,
+            date=yesterday,
+            units_sold=5
+        )
+
+        self.client.force_login(self.manager)
+
+        response = self.client.get(
+            self.url,
+            {'product': self.product.pk}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Sales history cutoff:')
+
+        for service in (forecast, shortage, reorder, anomalies):
+            service.assert_called_once_with(
+                self.product.pk,
+                yesterday
+            )

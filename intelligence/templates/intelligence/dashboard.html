@@ -58,6 +58,12 @@
     | Safety stock: {{ selected_product.safety_stock }}
 </p>
 
+{% if analysis_date %}
+<p class="text-secondary">
+    Sales history cutoff: {{ analysis_date }}
+</p>
+{% endif %}
+
 <div class="row g-3">
 
     <div class="col-md-6">
