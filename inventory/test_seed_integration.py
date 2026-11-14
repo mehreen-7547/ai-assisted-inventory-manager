@@ -1,5 +1,6 @@
 
-from datetime import timedelta
+from datetime import date, timedelta
+from unittest.mock import patch
 from io import StringIO
 
 from django.contrib.auth import get_user_model
@@ -50,17 +51,21 @@ class SeedDemoDataIntegrationTests(TestCase):
             role='sales'
         )
 
-        cls.today = timezone.localdate()
+        cls.today = date(2026, 11, 13)
         cls.first_day = cls.today - timedelta(days=365)
         cls.last_day = cls.today - timedelta(days=1)
 
         cls.seed_output = StringIO()
 
-        call_command(
-            'seed_demo_data',
-            manager=cls.manager.username,
-            stdout=cls.seed_output
-        )
+        with patch(
+            'inventory.management.commands.seed_demo_data.timezone.localdate',
+            return_value=cls.today
+        ):
+            call_command(
+                'seed_demo_data',
+                manager=cls.manager.username,
+                stdout=cls.seed_output
+            )
 
     def test_products_suppliers_and_users(self):
         User = get_user_model()
@@ -323,7 +328,11 @@ class SeedDemoDataIntegrationTests(TestCase):
                 0
             )
 
-    def test_dashboards_use_generated_history(self):
+    @patch(
+        'core.dashboard.timezone.localdate',
+        return_value=date(2026, 11, 13)
+    )
+    def test_dashboards_use_generated_history(self, mock_localdate):
         manager_summary = get_manager_summary()
 
         self.assertEqual(
