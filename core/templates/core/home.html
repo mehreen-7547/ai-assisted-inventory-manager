@@ -200,6 +200,25 @@
         {% elif request.user.role == 'manager' %}
 
         <h2 class="h5 mb-3">Inventory Manager Dashboard</h2>
+        <div class="card mt-4">
+            <div class="card-header bg-white"><h3 class="h5 mb-0">Needs attention today</h3></div>
+            <div class="card-body">
+                {% if needs_attention.items %}
+                <div class="table-responsive"><table class="table table-sm align-middle">
+                    <thead><tr><th>Product</th><th>Attention</th><th>Reason</th><th>Details</th></tr></thead>
+                    <tbody>{% for item in needs_attention.items %}
+                    <tr><td>{{ item.product.name }}</td><td>{{ item.kind }}</td>
+                    <td>{{ item.detail }}</td>
+                    <td><a href="{% url 'intelligence_dashboard' %}?product={{ item.product.pk }}">Demand Intelligence</a></td></tr>
+                    {% endfor %}</tbody>
+                </table></div>
+                {% else %}<p>No attention items found from available data.</p>{% endif %}
+                {% if needs_attention.failed_products %}
+                <p class="small text-secondary">Analysis unavailable for {{ needs_attention.failed_products }} product(s).</p>
+                {% endif %}
+            </div>
+        </div>
+
 
         <a href="{% url 'intelligence_dashboard' %}"
         class="btn btn-outline-primary mb-3">

@@ -1,5 +1,6 @@
 
 from django.shortcuts import render
+from .attention import get_needs_attention_today
 
 from accounts.decorators import role_required
 from .dashboard import (
@@ -25,6 +26,7 @@ def home(request):
 
     if request.user.role == 'manager':
         context['manager_summary'] = get_manager_summary()
+        context['needs_attention'] = get_needs_attention_today()
 
         context['low_stock_products'] = (
             get_low_stock_products()
