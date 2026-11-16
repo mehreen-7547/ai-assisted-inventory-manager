@@ -37,6 +37,26 @@ def get_fallback_sales(product_id, end_date):
     return sales
 
 
+def get_recent_average(product_id, end_date, days=28):
+    """Return a true calendar-day average; missing dates are not zero sales."""
+    records = list(
+        DailySales.objects.filter(
+            product_id=product_id,
+            date__gte=end_date - timedelta(days=days - 1),
+            date__lte=end_date
+        ).values_list('date', 'units_sold')
+    )
+    if len(records) != days:
+        return None
+    by_date = dict(records)
+    if any(
+        end_date - timedelta(days=i) not in by_date
+        for i in range(days)
+    ):
+        return None
+    return sum(by_date.values()) / days
+
+
 def calculate_fallback_demand(
     product_id, end_date, lead_time_days
 ):
@@ -175,7 +195,10 @@ def recommend_reorder_quantity(product_id, end_date):
         'later_incoming': 0,
         'reorder_quantity': None,
         'reason': None,
-        'ai_error': None
+        'ai_error': None,
+        'demand_basis': None,
+        'ai_lead_time_demand': None,
+        'recent_lead_time_demand': None
     }
 
     if type(lead_time_days) is not int or not 1 <= lead_time_days <= 30:
@@ -210,8 +233,28 @@ def recommend_reorder_quantity(product_id, end_date):
 
     result.update(demand)
 
+    recent_average = get_recent_average(product_id, end_date)
+    if recent_average is not None:
+        recent_lead_time_demand = recent_average * lead_time_days
+        result['recent_lead_time_demand'] = recent_lead_time_demand
+        result['average_daily_demand'] = recent_average
+    else:
+        recent_lead_time_demand = None
+
+    if demand['method'] == 'ai_chronos':
+        result['ai_lead_time_demand'] = demand['lead_time_demand']
+        if (recent_lead_time_demand is not None
+                and recent_lead_time_demand > demand['lead_time_demand']):
+            result['lead_time_demand'] = recent_lead_time_demand
+            result['demand_basis'] = 'recent_28_day_average'
+        else:
+            result['demand_basis'] = 'ai_median'
+    else:
+        result['demand_basis'] = 'non_ai_fallback'
+
     required_quantity = (
-        demand['lead_time_demand']
+
+        result['lead_time_demand']
         + product.safety_stock
         - product.on_hand
         - incoming['scheduled_incoming']

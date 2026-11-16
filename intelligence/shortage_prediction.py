@@ -7,6 +7,7 @@ from catalog.models import Product
 from purchasing.models import PurchaseOrderLine
 
 from .forecasting import forecast_product_demand
+from .reorder_recommendation import get_recent_average
 
 
 def predict_stock_shortage(product_id, end_date):
@@ -39,6 +40,9 @@ def predict_stock_shortage(product_id, end_date):
         ):
             raise ValueError('Invalid forecast demand')
 
+    recent_average = get_recent_average(product_id, end_date)
+    # Match reorder planning: use the larger daily demand each day.
+    # Never substitute missing history with zero sales.
     incoming_lines = PurchaseOrderLine.objects.filter(
         product_id=product_id,
         purchase_order__status__in=[
@@ -51,6 +55,8 @@ def predict_stock_shortage(product_id, end_date):
     incoming_by_date = {}
     unscheduled_incoming = 0
     overdue_incoming = 0
+    incoming_orders = []
+    overdue_orders = []
 
     for line in incoming_lines:
         remaining = (
@@ -67,8 +73,10 @@ def predict_stock_shortage(product_id, end_date):
 
         if delivery_date <= end_date:
             overdue_incoming += remaining
+            overdue_orders.append({'date': delivery_date, 'quantity': remaining})
             continue
 
+        incoming_orders.append({'date': delivery_date, 'quantity': remaining})
         incoming_by_date[delivery_date] = (
             incoming_by_date.get(delivery_date, 0)
             + remaining
@@ -83,7 +91,7 @@ def predict_stock_shortage(product_id, end_date):
 
     for prediction in predictions:
         date = prediction['date']
-        demand = prediction['p50']
+        demand = max(prediction['p50'], recent_average) if recent_average is not None else prediction['p50']
 
         incoming = incoming_by_date.get(date, 0)
 
@@ -117,7 +125,10 @@ def predict_stock_shortage(product_id, end_date):
         'lead_time_days': product.lead_time_days,
         'unscheduled_incoming': unscheduled_incoming,
         'overdue_incoming': overdue_incoming,
+        'incoming_orders': incoming_orders,
+        'overdue_orders': overdue_orders,
         'first_safety_breach': first_safety_breach,
         'first_stockout': first_stockout,
+        'demand_rule': 'higher_of_ai_and_recent_average' if recent_average is not None else 'ai_only',
         'daily_projection': daily_projection
     }

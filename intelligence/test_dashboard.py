@@ -131,7 +131,7 @@ class IntelligenceDashboardTests(TestCase):
             'status': 'available',
             'reorder_quantity': 15,
             'method': 'ai_chronos',
-            'reason': 'Reorder recommended',
+            'reason': 'Reorder now',
             'scheduled_incoming': 0
         }
 
@@ -150,11 +150,12 @@ class IntelligenceDashboardTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Test Model')
-        self.assertContains(response, 'Reorder recommended')
+        self.assertContains(response, '15 units')
+        self.assertContains(response, 'Show daily forecast (30 days)')
+        self.assertContains(response, 'Reorder now')
         self.assertContains(
             response,
-            'No unusual sales patterns detected.'
+            'No unusual days in the last 30 days.'
         )
 
         forecast.assert_called_once()
@@ -185,7 +186,7 @@ class IntelligenceDashboardTests(TestCase):
             'status': 'available',
             'reorder_quantity': 8,
             'method': 'non_ai_fallback',
-            'reason': 'Reorder recommended',
+            'reason': 'Reorder now',
             'scheduled_incoming': 0
         }
 
@@ -214,7 +215,7 @@ class IntelligenceDashboardTests(TestCase):
         )
         self.assertContains(
             response,
-            'No unusual sales patterns detected.'
+            'No unusual days in the last 30 days.'
         )
 
 
@@ -241,7 +242,7 @@ class IntelligenceDashboardTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Sales history cutoff:')
+        self.assertContains(response, 'Sales data up to')
 
         for service in (forecast, shortage, reorder, anomalies):
             service.assert_called_once_with(

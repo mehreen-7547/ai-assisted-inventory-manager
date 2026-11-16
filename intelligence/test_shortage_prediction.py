@@ -47,7 +47,9 @@ class StockShortagePredictionTests(SimpleTestCase):
             'intelligence.shortage_prediction.forecast_product_demand'
         ) as forecast, patch(
             'intelligence.shortage_prediction.PurchaseOrderLine.objects.filter'
-        ) as filter_lines:
+        ) as filter_lines, patch(
+            'intelligence.shortage_prediction.get_recent_average', return_value=None
+        ):
 
             get_product.return_value = self.product
             forecast.return_value = self.make_forecast(demand)

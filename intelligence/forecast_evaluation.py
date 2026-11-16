@@ -79,8 +79,18 @@ def evaluate_product_forecast(product_id, end_date):
     ai_mae = calculate_mae(actual, ai_values)
     baseline_mae = calculate_mae(actual, baseline_values)
 
+    actual_total = sum(actual)
+    ai_total = sum(ai_values)
+    baseline_total = sum(baseline_values)
+
     return {
+        'actual_total': round(actual_total, 2),
+        'ai_total': round(ai_total, 2),
+        'baseline_total': round(baseline_total, 2),
+        'ai_total_error': round(abs(actual_total - ai_total), 2),
+        'baseline_total_error': round(abs(actual_total - baseline_total), 2),
         'product_id': product_id,
+
         'cutoff_date': cutoff_date,
         'test_start': cutoff_date + timedelta(days=1),
         'test_end': end_date,

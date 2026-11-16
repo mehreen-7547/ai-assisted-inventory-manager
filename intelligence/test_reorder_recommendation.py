@@ -74,9 +74,10 @@ class ReorderRecommendationTests(SimpleTestCase):
                     'lead_time_demand': 42
                 }
 
-            return recommend_reorder_quantity(
-                self.product.id, self.end_date
-            )
+            with patch('intelligence.reorder_recommendation.get_recent_average', return_value=None):
+                return recommend_reorder_quantity(
+                    self.product.id, self.end_date
+                )
 
     def test_ai_reorder_quantity(self):
         result = self.run_recommendation()
