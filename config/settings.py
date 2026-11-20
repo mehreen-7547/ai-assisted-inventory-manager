@@ -128,3 +128,11 @@ else:
     DEFAULT_FROM_EMAIL = "no-reply@example.com"
 
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / '.django_cache',
+        'TIMEOUT': 60 * 60 * 24,
+    }
+}

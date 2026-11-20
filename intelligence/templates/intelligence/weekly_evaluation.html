@@ -1,0 +1,144 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Forecast Comparison{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <h2>Forecast Comparison</h2>
+
+    <p class="text-secondary">
+        Comparing AI, the previous 7-day average, and
+        predicting zero across the last 8 completed weeks.
+        Evaluation ending {{ end_date }}.
+    </p>
+
+    <form method="post" class="mb-3">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">
+        Run Forecast Comparison
+    </button>
+    <p class="text-secondary small mt-2">
+        This evaluates up to eight historical weeks per product.
+        The calculation may take several minutes.
+        Results are cached for 24 hours.
+    </p>
+    </form>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h3 class="h5">Evaluation summary</h3>
+
+            <p>Products considered:
+                {{ evaluation.product_count }}
+            </p>
+
+            <p>Product-weeks evaluated:
+                {{ evaluation.evaluated_product_weeks }}
+            </p>
+
+            <p>Product-weeks skipped:
+                {{ evaluation.skipped_product_weeks }}
+            </p>
+
+            {% if evaluation.evaluated_product_weeks %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Mean weekly absolute error (units)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>AI (Chronos)</td>
+                                <td>{{ evaluation.mean_weekly_absolute_errors.ai }}</td>
+                            </tr>
+                            <tr>
+                                <td>Previous 7-day average</td>
+                                <td>{{ evaluation.mean_weekly_absolute_errors.average }}</td>
+                            </tr>
+                            <tr>
+                                <td>Predict zero</td>
+                                <td>{{ evaluation.mean_weekly_absolute_errors.zero }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>
+                    <strong>Best method(s):</strong>
+                    {{ evaluation.best_methods|join:", " }}
+                </p>
+
+                {% if 'ai' in evaluation.best_methods %}
+                    <p>AI achieved the lowest error, possibly tied with another method.</p>
+                {% else %}
+                    <p>The AI model did not achieve the lowest error.
+                    A simpler method performed better on this evaluation.</p>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-warning">
+                    No valid product-weeks were available.
+                    Check sales history and forecasting availability.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h3 class="h5">Weekly results</h3>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Week</th>
+                            <th>Actual</th>
+                            <th>AI</th>
+                            <th>7-day average</th>
+                            <th>Zero</th>
+                            <th>AI error</th>
+                            <th>Average error</th>
+                            <th>Zero error</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in evaluation.rows %}
+                            <tr>
+                                <td>{{ row.product_name }}</td>
+                                <td>{{ row.week_start }} to {{ row.week_end }}</td>
+                                <td>{{ row.actual }}</td>
+                                <td>{{ row.ai }}</td>
+                                <td>{{ row.average }}</td>
+                                <td>{{ row.zero }}</td>
+                                <td>{{ row.ai_error }}</td>
+                                <td>{{ row.average_error }}</td>
+                                <td>{{ row.zero_error }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="9">No evaluation results available.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <p class="text-secondary small">
+        Each prediction uses only the sales history available before
+        its evaluation week. Lower absolute error is better.
+        Results are historical comparisons, not guarantees of future accuracy.
+    </p>
+
+    <a href="{% url 'intelligence_dashboard' %}"
+       class="btn btn-outline-primary">
+        Back to Demand Intelligence
+    </a>
+</div>
+{% endblock %}

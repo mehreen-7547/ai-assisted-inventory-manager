@@ -16,6 +16,10 @@ from .models import DailySales
 from .forecast_evaluation import evaluate_product_forecast
 from .reorder_recommendation import get_recent_average
 
+from .weekly_evaluation import evaluate_weekly_forecasts
+
+from django.core.cache import cache
+
 
 
 
@@ -257,5 +261,26 @@ def intelligence_dashboard(request):
             'evaluation': evaluation,
             'evaluation_error': evaluation_error,
             'decision': decision
+        }
+    )
+
+@role_required('manager')
+def weekly_evaluation_dashboard(request):
+    end_date = timezone.localdate()
+    end_date -= timedelta(days=end_date.weekday() + 1)
+
+    cache_key = f'weekly_forecast_evaluation_{end_date.isoformat()}'
+    evaluation = cache.get(cache_key)
+
+    if request.method == 'POST':
+        evaluation = evaluate_weekly_forecasts(end_date)
+        cache.set(cache_key, evaluation, 60 * 60 * 24)
+
+    return render(
+        request,
+        'intelligence/weekly_evaluation.html',
+        {
+            'evaluation': evaluation,
+            'end_date': end_date
         }
     )

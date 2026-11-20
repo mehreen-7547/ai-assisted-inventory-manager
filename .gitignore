@@ -11,3 +11,4 @@ __pycache__/
 ai_probe_results*.json
 staticfiles/
 media/
+.django_cache/
