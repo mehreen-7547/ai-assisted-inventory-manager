@@ -99,3 +99,18 @@ p { margin-bottom: .65rem; }
     .app-topbar { justify-content: flex-start; }
     .dashboard-page .dashboard-heading h1 { font-size: 1.3rem; }
 }
+
+/* Shared page headings and compact operational forms */
+.page-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.15rem; }
+.page-heading h1 { font-size: 1.45rem; font-weight: 700; margin: 0 0 .25rem; }
+.page-heading p { font-size: .82rem; }
+.receipt-form { max-width: 1100px; }
+.receipt-table { min-width: 750px; }
+.receipt-table th { font-size: .76rem; }
+.receipt-table td { vertical-align: middle; }
+.receipt-product { min-width: 220px; font-weight: 550; }
+.receipt-input input { display: block; width: 100%; min-width: 95px; max-width: 125px; padding: .4rem .55rem; border: 1px solid #d5dce5; border-radius: 7px; background: #fff; }
+.receipt-input input:focus { outline: 2px solid #c2d8ed; outline-offset: 1px; }
+.receipt-input .errorlist { color: #b42318; font-size: .75rem; padding-left: 1rem; margin: .3rem 0 0; }
+.receipt-actions { display: flex; justify-content: flex-end; align-items: center; gap: .6rem; padding-top: .85rem; }
+@media (max-width: 600px) { .page-heading { align-items: flex-start; } .page-heading h1 { font-size: 1.25rem; } .receipt-actions { flex-wrap: wrap; } }
