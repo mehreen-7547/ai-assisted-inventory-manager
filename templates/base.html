@@ -1,65 +1,63 @@
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>{% block title %}Inventory System{% endblock %}</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{% static 'core/ui.css' %}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-
-<nav class="navbar bg-body-tertiary border-bottom">
-    <div class="container">
-        <a class="navbar-brand" href="{% url 'home' %}">
-            Inventory System
-        </a>
-
-        {% if user.is_authenticated %}
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-
+{% if user.is_authenticated %}
+<div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar">
+        <a class="app-brand" href="{% url 'home' %}"><span class="brand-mark">I</span><span>Inventory<span class="brand-subtitle">Demand Intelligence</span></span></a>
+        <div class="sidebar-label">WORKSPACE</div>
+        <nav class="app-navigation" aria-label="Main navigation">
+            <a href="{% url 'home' %}" class="app-nav-link {% if request.path == '/' %}active{% endif %}">Overview</a>
             {% if user.role == 'admin' %}
-            <a href="{% url 'employee_list' %}">
-                Manage Employees
-            </a>
+                <a href="{% url 'employee_list' %}" class="app-nav-link {% if '/employees/' in request.path %}active{% endif %}">Employees</a>
+                {% if user.is_staff %}<a href="/admin/" class="app-nav-link">Django Admin</a>{% endif %}
+            {% elif user.role == 'manager' %}
+                <a href="{% url 'product_list' %}" class="app-nav-link {% if '/products/' in request.path %}active{% endif %}">Products</a>
+                <a href="{% url 'supplier_list' %}" class="app-nav-link {% if '/suppliers/' in request.path %}active{% endif %}">Suppliers</a>
+                <a href="{% url 'purchase_order_list' %}" class="app-nav-link {% if '/purchase-orders/' in request.path or request.path == '/add/' %}active{% endif %}">Purchase orders</a>
+                <a href="{% url 'sale_list' %}" class="app-nav-link {% if '/sales/' in request.path %}active{% endif %}">Sales</a>
+                <a href="{% url 'intelligence_dashboard' %}" class="app-nav-link {% if '/intelligence/' in request.path and '/evaluation/' not in request.path %}active{% endif %}">Demand intelligence</a>
+                <a href="{% url 'weekly_evaluation_dashboard' %}" class="app-nav-link {% if '/evaluation/' in request.path %}active{% endif %}">Forecast comparison</a>
+            {% elif user.role == 'sales' %}
+                <a href="{% url 'product_list' %}" class="app-nav-link {% if '/products/' in request.path %}active{% endif %}">Products</a>
+                <a href="{% url 'sale_list' %}" class="app-nav-link {% if '/sales/' in request.path %}active{% endif %}">Sales</a>
             {% endif %}
-
-            <a href="{% url 'change_password' %}">
-                Change Password
-            </a>
-
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-secondary btn-sm">
-                    Logout
-                </button>
-            </form>
-
+        </nav>
+        <div class="sidebar-bottom">
+            <div class="sidebar-user"><strong>{{ user.username }}</strong><span>{{ user.get_role_display }}</span></div>
+            <a class="app-nav-link" href="{% url 'change_password' %}">Change password</a>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="app-nav-link sidebar-logout" type="submit">Sign out</button></form>
         </div>
-        {% endif %}
+    </aside>
+    <div class="app-workspace">
+        <header class="app-topbar">
+            <button class="sidebar-toggle" type="button" aria-label="Toggle navigation" aria-controls="app-sidebar" aria-expanded="false" onclick="document.body.classList.toggle('sidebar-open');this.setAttribute('aria-expanded',document.body.classList.contains('sidebar-open'))">☰</button>
+            <span class="topbar-title">Inventory &amp; Demand Intelligence</span>
+            <span class="topbar-role">{{ user.get_role_display }}</span>
+        </header>
+        <main class="app-main">
+            {% if messages %}{% for message in messages %}
+            <div class="alert {% if 'error' in message.tags %}alert-danger{% elif 'success' in message.tags %}alert-success{% else %}alert-info{% endif %}">{{ message }}</div>
+            {% endfor %}{% endif %}
+            {% block content %}{% endblock %}
+        </main>
     </div>
-</nav>
-
-<main class="container app-main py-4">
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert {% if 'error' in message.tags %}alert-danger{% elif 'success' in message.tags %}alert-success{% else %}alert-info{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
+</div>
+{% else %}
+<nav class="navbar border-bottom"><div class="container"><a class="navbar-brand" href="{% url 'home' %}">Inventory &amp; Demand Intelligence</a></div></nav>
+<main class="container app-main">
+    {% if messages %}{% for message in messages %}<div class="alert {% if 'error' in message.tags %}alert-danger{% elif 'success' in message.tags %}alert-success{% else %}alert-info{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
     {% block content %}{% endblock %}
-
 </main>
-
+{% endif %}
 </body>
 </html>
