@@ -1,19 +1,20 @@
 
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Inventory System{% endblock %}
+{% block title %}Dashboard - Inventory System</div>
+{% endblock %}
 
 {% block content %}
+<div class="dashboard-page">
 
-<div class="mb-4">
-    <h1 class="h3 mb-2">Inventory &amp; Demand Intelligence</h1>
+<div class="dashboard-heading">
+    <h1>Overview</h1>
     <p class="text-secondary">
-        Welcome, <strong>{{ request.user.username }}</strong>
-        &middot; {{ request.user.get_role_display }}
+        {{ request.user.get_role_display }} · Your workspace at a glance
     </p>
 </div>
 
-<div class="card shadow-sm">
+<div class="card dashboard-wrapper">
     <div class="card-body p-4">
 
         {% if request.user.role == 'admin' %}
@@ -199,60 +200,8 @@
 
         {% elif request.user.role == 'manager' %}
 
-        <h2 class="h5 mb-3">Inventory Manager Dashboard</h2>
-        <div class="card mt-4">
-            <div class="card-header bg-white"><h3 class="h5 mb-0">Needs attention today</h3></div>
-            <div class="card-body">
-                {% if needs_attention.items %}
-                <div class="table-responsive"><table class="table table-sm align-middle">
-                    <thead><tr><th>Product</th><th>Attention</th><th>Reason</th><th>Details</th></tr></thead>
-                    <tbody>{% for item in needs_attention.items %}
-                    <tr><td>{{ item.product.name }}</td><td>{{ item.kind }}</td>
-                    <td>{{ item.detail }}</td>
-                    <td><a href="{% url 'intelligence_dashboard' %}?product={{ item.product.pk }}">Demand Intelligence</a></td></tr>
-                    {% endfor %}</tbody>
-                </table></div>
-                {% else %}<p>No attention items found from available data.</p>{% endif %}
-                {% if needs_attention.failed_products %}
-                <p class="small text-secondary">Analysis unavailable for {{ needs_attention.failed_products }} product(s).</p>
-                {% endif %}
-            </div>
-        </div>
-
-
-        <a href="{% url 'intelligence_dashboard' %}"
-        class="btn btn-outline-primary mb-3">
-            Demand Intelligence
-        </a>
-
-        <div class="d-flex flex-wrap gap-2">
-            <a href="{% url 'supplier_list' %}" class="btn btn-outline-primary">
-                Manage Suppliers
-            </a>
-
-            <a href="{% url 'product_list' %}" class="btn btn-outline-primary">
-                Manage Products
-            </a>
-
-            <a href="{% url 'purchase_order_create' %}" class="btn btn-outline-primary">
-                Create Purchase Order
-            </a>
-
-            <a href="{% url 'purchase_order_list' %}" class="btn btn-outline-primary">
-                Purchase Orders
-            </a>
-
-            <a href="{% url 'sale_create' %}" class="btn btn-primary">
-                Record Sale
-            </a>
-
-            <a href="{% url 'sale_list' %}" class="btn btn-outline-primary">
-                Sales History
-            </a>
-        </div>
-
-
-        <div class="row g-3 mt-3">
+        
+        <div class="row g-3 dashboard-summary">
 
             <div class="col-md-4">
                 <div class="card h-100">
@@ -359,6 +308,61 @@
 
 
 
+        <div class="card attention-panel">
+            <div class="card-header bg-white"><h3 class="h5 mb-0">Needs attention today</h3></div>
+            <div class="card-body">
+                {% if needs_attention.items %}
+                <div class="table-responsive"><table class="table table-sm align-middle">
+                    <thead><tr><th>Product</th><th>Attention</th><th>Reason</th><th>Details</th></tr></thead>
+                    <tbody>{% for item in needs_attention.items %}
+                    <tr><td>{{ item.product.name }}</td><td>{{ item.kind }}</td>
+                    <td>{{ item.detail }}</td>
+                    <td><a href="{% url 'intelligence_dashboard' %}?product={{ item.product.pk }}">Demand Intelligence</a></td></tr>
+                    {% endfor %}</tbody>
+                </table></div>
+                {% else %}<p>No attention items found from available data.</p>{% endif %}
+                {% if needs_attention.failed_products %}
+                <p class="small text-secondary">Analysis unavailable for {{ needs_attention.failed_products }} product(s).</p>
+                {% endif %}
+            </div>
+        </div>
+
+
+<details class="dashboard-shortcuts mt-3 mb-3"><summary class="small text-secondary">Quick actions</summary><div class="dashboard-actions">
+        <a href="{% url 'intelligence_dashboard' %}"
+        class="btn btn-outline-primary mb-3">
+            Demand Intelligence
+        </a>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'supplier_list' %}" class="btn btn-outline-primary">
+                Manage Suppliers
+            </a>
+
+            <a href="{% url 'product_list' %}" class="btn btn-outline-primary">
+                Manage Products
+            </a>
+
+            <a href="{% url 'purchase_order_create' %}" class="btn btn-outline-primary">
+                Create Purchase Order
+            </a>
+
+            <a href="{% url 'purchase_order_list' %}" class="btn btn-outline-primary">
+                Purchase Orders
+            </a>
+
+            <a href="{% url 'sale_create' %}" class="btn btn-primary">
+                Record Sale
+            </a>
+
+            <a href="{% url 'sale_list' %}" class="btn btn-outline-primary">
+                Sales History
+            </a>
+        </div>
+
+
+
+</div></details>
         <div class="card mt-4">
             <div class="card-header bg-white">
                 <h3 class="h5 mb-0">
