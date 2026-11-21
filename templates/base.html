@@ -10,8 +10,8 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+<div class="app-shell {% if not user.is_authenticated %}app-shell-guest{% endif %}">
 {% if user.is_authenticated %}
-<div class="app-shell">
     <aside class="app-sidebar" id="app-sidebar">
         <a class="app-brand" href="{% url 'home' %}"><span class="brand-mark">I</span><span>Inventory<span class="brand-subtitle">Demand Intelligence</span></span></a>
         <div class="sidebar-label">WORKSPACE</div>
@@ -44,6 +44,7 @@
             <span class="topbar-title">Inventory &amp; Demand Intelligence</span>
             <span class="topbar-role">{{ user.get_role_display }}</span>
         </header>
+{% endif %}
         <main class="app-main">
             {% if messages %}{% for message in messages %}
             <div class="alert {% if 'error' in message.tags %}alert-danger{% elif 'success' in message.tags %}alert-success{% else %}alert-info{% endif %}">{{ message }}</div>
@@ -52,12 +53,5 @@
         </main>
     </div>
 </div>
-{% else %}
-<nav class="navbar border-bottom"><div class="container"><a class="navbar-brand" href="{% url 'home' %}">Inventory &amp; Demand Intelligence</a></div></nav>
-<main class="container app-main">
-    {% if messages %}{% for message in messages %}<div class="alert {% if 'error' in message.tags %}alert-danger{% elif 'success' in message.tags %}alert-success{% else %}alert-info{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
-    {% block content %}{% endblock %}
-</main>
-{% endif %}
 </body>
 </html>
