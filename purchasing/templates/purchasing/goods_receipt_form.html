@@ -1,76 +1,47 @@
-
 {% extends 'base.html' %}
-
+{% block title %}Receive Goods · {{ order.po_number }}{% endblock %}
 {% block content %}
-
-<h2>Receive Goods</h2>
-
-<p>
-    Purchase Order: {{ order.po_number }}
-</p>
-
-<p>
-    Supplier: {{ order.supplier.name }}
-</p>
-
-<p>
-    Status: {{ order.get_status_display }}
-</p>
-
-<form method="post">
+<div class="page-heading">
+    <div>
+        <h1>Receive goods</h1>
+        <p class="text-secondary mb-0">Purchase order <strong>{{ order.po_number }}</strong> · {{ order.supplier.name }} · {{ order.get_status_display }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'purchase_order_detail' order.pk %}">Back to order</a>
+</div>
+<form method="post" class="card receipt-form">
     {% csrf_token %}
-
-    <input
-        type="hidden"
-        name="submission_key"
-        value="{{ submission_key }}"
-    >
-
-    {{ form.non_field_errors }}
-
-    <table>
-        <thead>
-            <tr>
-                <th>Product</th>
-                <th>Ordered</th>
-                <th>Previously Received</th>
-                <th>Remaining</th>
-                <th>Usable Quantity</th>
-                <th>Damaged Quantity</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for row in receipt_rows %}
-            <tr>
-                <td>{{ row.line.product.name }}</td>
-                <td>{{ row.line.quantity_ordered }}</td>
-                <td>{{ row.line.quantity_received }}</td>
-                <td>{{ row.remaining }}</td>
-
-                <td>
-                    {{ row.received_field }}
-                    {{ row.received_field.errors }}
-                </td>
-
-                <td>
-                    {{ row.damaged_field }}
-                    {{ row.damaged_field.errors }}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <br>
-
-    <button type="submit">
-        Record Goods Receipt
-    </button>
-
-    <a href="{% url 'purchase_order_detail' order.pk %}">
-        Cancel
-    </a>
+    <input type="hidden" name="submission_key" value="{{ submission_key }}">
+    <div class="card-header"><h2 class="h6 mb-0">Items to receive</h2></div>
+    <div class="card-body">
+        {{ form.non_field_errors }}
+        <div class="table-responsive">
+            <table class="table align-middle receipt-table">
+                <thead><tr>
+                    <th scope="col">Product</th>
+                    <th scope="col" class="text-end">Ordered</th>
+                    <th scope="col" class="text-end">Received</th>
+                    <th scope="col" class="text-end">Remaining</th>
+                    <th scope="col">Usable qty</th>
+                    <th scope="col">Damaged qty</th>
+                </tr></thead>
+                <tbody>
+                {% for row in receipt_rows %}
+                <tr>
+                    <td class="receipt-product">{{ row.line.product.name }}</td>
+                    <td class="text-end">{{ row.line.quantity_ordered }}</td>
+                    <td class="text-end">{{ row.line.quantity_received }}</td>
+                    <td class="text-end fw-semibold">{{ row.remaining }}</td>
+                    <td><div class="receipt-input">{{ row.received_field }}{{ row.received_field.errors }}</div></td>
+                    <td><div class="receipt-input">{{ row.damaged_field }}{{ row.damaged_field.errors }}</div></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="receipt-actions">
+            <a class="btn btn-outline-secondary" href="{% url 'purchase_order_detail' order.pk %}">Cancel</a>
+            <button type="submit" class="btn btn-primary">Record goods receipt</button>
+        </div>
+    </div>
 </form>
-
 {% endblock %}
