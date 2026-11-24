@@ -6,15 +6,16 @@
 {% block content %}
 
 {% if form.instance.pk %}
-    <h2 class="mb-4">Edit Product</h2>
+    <div class="page-heading"><h1>Edit Product</h1></div>
 {% else %}
-    <h2 class="mb-4">Add Product</h2>
+    <div class="page-heading"><h1>Add Product</h1></div>
 {% endif %}
 
-<form method="POST">
+<form method="POST" class="card catalog-form card-body">
     {% csrf_token %}
 
     {{ form.as_p }}
+    <div class="catalog-form-actions">
 
     {% if form.instance.pk %}
         <button type="submit" class="btn btn-primary">
@@ -30,12 +31,13 @@
        class="btn btn-outline-secondary">
         Cancel
     </a>
+    </div>
 </form>
 
 
 {% if form.instance.pk %}
 
-<hr>
+<div class="card card-body catalog-status mt-3">
 
 <h5 class="mt-4">Product Status</h5>
 
@@ -77,6 +79,7 @@
 
 </form>
 
+</div>
 {% endif %}
 
 
