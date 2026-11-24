@@ -5,9 +5,9 @@
 
 {% block content %}
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+<div class="page-heading">
     <div>
-        <h1 class="h3 mb-1">{{ order.po_number }}</h1>
+        <h1>{{ order.po_number }}</h1>
         <p class="text-secondary mb-0">
             Purchase Order Details
         </p>
@@ -19,17 +19,17 @@
     </a>
 </div>
 
-<div class="card shadow-sm mb-4">
+<div class="card mb-3">
     <div class="card-body">
 
-        <div class="row g-3">
+        <div class="row g-2">
 
-            <div class="col-md-6">
+            <div class="col-sm-6 col-lg-3">
                 <div class="text-secondary small">Supplier</div>
                 <div class="fw-semibold">{{ order.supplier.name }}</div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-sm-6 col-lg-3">
                 <div class="text-secondary small">Status</div>
 
                 {% if order.status == 'draft' %}
@@ -47,12 +47,12 @@
                 {% endif %}
             </div>
 
-            <div class="col-md-6">
+            <div class="col-sm-6 col-lg-3">
                 <div class="text-secondary small">Created By</div>
                 <div>{{ order.created_by.username }}</div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-sm-6 col-lg-3">
                 <div class="text-secondary small">Created Date</div>
                 <div>{{ order.created_at|date:"d M Y, h:i A" }}</div>
             </div>
@@ -62,9 +62,9 @@
     </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white py-3">
-        <h2 class="h5 mb-0">Ordered Products</h2>
+<div class="card mb-3">
+    <div class="card-header bg-white py-2">
+        <h2 class="h6 mb-0">Ordered Products</h2>
     </div>
 
     <div class="card-body">
@@ -118,9 +118,9 @@
 </div>
 
 {% if order.status == 'draft' or order.status == 'ordered' or order.status == 'partially_received' %}
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white py-3">
-        <h2 class="h5 mb-0">Order Actions</h2>
+<div class="card mb-3">
+    <div class="card-header bg-white py-2">
+        <h2 class="h6 mb-0">Order Actions</h2>
     </div>
 
     <div class="card-body">
