@@ -103,7 +103,10 @@ class EmployeeManagementTests(TestCase):
         response = self.client.get(reverse('employee_list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'salesuser')
-        self.assertNotContains(response, 'adminuser')
+        employee_usernames = [employee.username for employee in response.context['employees']]
+        self.assertIn('salesuser', employee_usernames)
+        self.assertNotIn('adminuser', employee_usernames)
+        self.assertNotContains(response, 'admin@example.com')
 
     def test_non_admin_cannot_access_employee_list(self):
         self.client.force_login(self.employee)
