@@ -36,10 +36,13 @@ def sale_list(request):
     status = request.GET.get('status', '').strip()
 
     if search:
-        sales = sales.filter(
-            Q(sale_number__icontains=search)
-            | Q(created_by__username__icontains=search)
-        )
+        if request.user.role == 'manager':
+            sales = sales.filter(
+                Q(sale_number__icontains=search)
+                | Q(created_by__username__icontains=search)
+            )
+        else:
+            sales = sales.filter(sale_number__icontains=search)
 
     if status in ['completed', 'voided']:
         sales = sales.filter(status=status)
