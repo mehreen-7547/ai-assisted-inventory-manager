@@ -10,7 +10,7 @@
 
 {% block content %}
 
-<h2 class="mb-4">Manage Suppliers</h2>
+<div class="page-heading"><h1>Suppliers</h1></div>
 
 <div class="supplier-actions">
 
@@ -43,9 +43,9 @@
     </p>
 {% endif %}
 
-<div class="table-responsive">
+<div class="card catalog-list"><div class="table-responsive">
 
-    <table class="supplier-table">
+    <table class="supplier-table table align-middle mb-0">
 
         <thead>
             <tr>
@@ -105,9 +105,6 @@
 
 </div>
 
-<a href="{% url 'home' %}"
-   class="btn btn-outline-secondary mt-3">
-    Back to Home
-</a>
+</div>
 
 {% endblock %}
