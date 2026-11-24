@@ -158,3 +158,8 @@ p { margin-bottom: .65rem; }
     .app-topbar { gap: .5rem; }
     .topbar-title { min-width: 0; }
 }
+
+/* Guest account branding */
+.guest-topbar { justify-content: flex-start; }
+.guest-brand { padding: 0; }
+.guest-brand .brand-mark { flex-shrink: 0; }
