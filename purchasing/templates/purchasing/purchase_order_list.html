@@ -5,9 +5,9 @@
 
 {% block content %}
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+<div class="page-heading">
     <div>
-        <h1 class="h3 mb-1">Purchase Orders</h1>
+        <h1>Purchase Orders</h1>
         <p class="text-secondary mb-0">
             Select a purchase order to view its details.
         </p>
@@ -19,14 +19,11 @@
             + Create Purchase Order
         </a>
 
-        <a href="{% url 'home' %}"
-           class="btn btn-outline-secondary">
-            Back
-        </a>
+        
     </div>
 </div>
 
-<div class="card shadow-sm">
+<div class="card">
     <div class="card-body">
 
         <div class="table-responsive">
