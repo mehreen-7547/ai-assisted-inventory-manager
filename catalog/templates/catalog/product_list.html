@@ -10,7 +10,7 @@
 
 {% block content %}
 
-<h2 class="mb-4">Products</h2>
+<div class="page-heading"><h1>Products</h1></div>
 
 {% if request.user.role == 'manager' %}
 
@@ -82,8 +82,8 @@
 
 {% endif %}
 
-<div class="table-responsive">
-    <table class="supplier-table">
+<div class="card catalog-list"><div class="table-responsive">
+    <table class="supplier-table table align-middle mb-0">
 
         <thead>
             <tr>
@@ -91,10 +91,10 @@
                 <th>Name</th>
                 <th>Category</th>
                 <th>Supplier</th>
-                <th>Unit Price</th>
-                <th>Lead Time</th>
-                <th>Safety Stock</th>
-                <th>On Hand</th>
+                <th class="text-end">Unit Price</th>
+                <th class="text-end">Lead Time</th>
+                <th class="text-end">Safety Stock</th>
+                <th class="text-end">On Hand</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -137,10 +137,10 @@
 
                 <td>{{ product.category }}</td>
                 <td>{{ product.supplier.name }}</td>
-                <td>{{ product.unit_price }}</td>
-                <td>{{ product.lead_time_days }} days</td>
-                <td>{{ product.safety_stock }}</td>
-                <td>{{ product.on_hand }}</td>
+                <td class="text-end">{{ product.unit_price }}</td>
+                <td class="text-end">{{ product.lead_time_days }} days</td>
+                <td class="text-end">{{ product.safety_stock }}</td>
+                <td class="text-end">{{ product.on_hand }}</td>
 
                 <td>
                     {% if product.is_active %}
@@ -167,9 +167,6 @@
     </table>
 </div>
 
-<a href="{% url 'home' %}"
-   class="btn btn-outline-secondary mt-3">
-    Back to Home
-</a>
+</div>
 
 {% endblock %}
