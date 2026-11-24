@@ -28,7 +28,7 @@
                     id="search"
                     name="search"
                     value="{{ search }}"
-                    placeholder="Sale number or employee"
+                    placeholder="{% if user.role == 'manager' %}Sale number or employee{% else %}Sale number{% endif %}"
                 >
             </div>
 
@@ -64,7 +64,7 @@
                     <tr>
                         <th>Sale Number</th>
                         <th>Date</th>
-                        <th>Recorded By</th>
+                        {% if user.role == 'manager' %}<th>Recorded By</th>{% endif %}
                         <th>Status</th>
                         <th class="text-end">Total</th>
                         <th class="text-end">Action</th>
@@ -78,7 +78,7 @@
                         <td class="text-nowrap">
                             {{ sale.created_at|date:"d M Y, H:i" }}
                         </td>
-                        <td>{{ sale.created_by.username }}</td>
+                        {% if user.role == 'manager' %}<td>{{ sale.created_by.username }}</td>{% endif %}
                         <td>
                             {% if sale.status == 'completed' %}
                             <span class="badge text-bg-success">Completed</span>
@@ -98,7 +98,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-secondary py-4">
+                        <td colspan="{% if user.role == 'manager' %}6{% else %}5{% endif %}" class="text-center text-secondary py-4">
                             No sales found.
                         </td>
                     </tr>
@@ -137,8 +137,6 @@
     </div>
 </div>
 
-<a href="{% url 'home' %}" class="btn btn-link px-0 mt-3">
-    Back to Dashboard
-</a>
+
 
 {% endblock %}
