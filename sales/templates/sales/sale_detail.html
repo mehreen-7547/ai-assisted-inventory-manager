@@ -5,9 +5,9 @@
 
 {% block content %}
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+<div class="page-heading">
     <div>
-        <h1 class="h3 mb-1">Sale Details</h1>
+        <h1>Sale Details</h1>
         <p class="text-secondary mb-0">{{ sale.sale_number }}</p>
     </div>
 
@@ -18,9 +18,9 @@
     {% endif %}
 </div>
 
-<div class="card shadow-sm mb-4">
+<div class="card mb-3">
     <div class="card-body">
-        <div class="row g-3">
+        <div class="row g-2">
             <div class="col-md-4">
                 <div class="text-secondary small">Sale Number</div>
                 <div class="fw-semibold">{{ sale.sale_number }}</div>
@@ -39,9 +39,9 @@
     </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white py-3">
-        <h2 class="h5 mb-0">Products Sold</h2>
+<div class="card mb-3">
+    <div class="card-header bg-white py-2">
+        <h2 class="h6 mb-0">Products Sold</h2>
     </div>
 
     <div class="table-responsive">
@@ -113,9 +113,7 @@
         Sales History
     </a>
 
-    <a href="{% url 'home' %}" class="btn btn-outline-secondary">
-        Dashboard
-    </a>
+    
 
     {% if user.role == 'manager' and sale.status == 'completed' %}
     <a href="{% url 'sale_void' sale.pk %}" class="btn btn-outline-danger">
