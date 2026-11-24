@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 {% block title %}Demand Intelligence{% endblock %}
 {% block content %}
-<div class="container py-3">
+<div class="intelligence-page">
   <p class="text-secondary small mb-1">Demand Intelligence</p>
   {% if selected_product %}
-    <h2 class="mb-1">{{ selected_product.name }}</h2>
+    <h1 class="h3 mb-1">{{ selected_product.name }}</h1>
     <p class="text-secondary">{{ selected_product.sku }} &middot; Sales data up to {{ analysis_date }}</p>
   {% else %}
-    <h2>Demand Intelligence</h2>
+    <h1 class="h3">Demand Intelligence</h1>
   {% endif %}
 
-  <form method="get" class="mb-4">
+  <form method="get" class="mb-3">
     <label for="product" class="form-label">Select product</label>
     <div class="row g-2 align-items-end">
       <div class="col-md-9">
@@ -32,14 +32,14 @@
       <p class="mb-0">{{ decision.support }}</p>
     </div>
 
-    <div class="row g-3 mb-3">
+    <div class="row g-2 mb-3">
       <div class="col-md-3 col-6"><div class="card h-100"><div class="card-body"><div class="text-secondary">In stock</div><div class="h3 mb-1">{{ decision.on_hand_label }}</div><small>Minimum to keep: {{ selected_product.safety_stock }}</small></div></div></div>
       <div class="col-md-3 col-6"><div class="card h-100"><div class="card-body"><div class="text-secondary">Selling</div><div class="h3 mb-1">{{ decision.selling.main }}</div><small>{{ decision.selling.note }}</small>{% if decision.selling.slow_note %}<div><small>{{ decision.selling.slow_note }}</small></div>{% endif %}</div></div></div>
       <div class="col-md-3 col-6"><div class="card h-100"><div class="card-body"><div class="text-secondary">Stock lasts</div><div class="h3 mb-1">{% if decision.cover != None %}{{ decision.cover_whole }} days{% else %}Unknown{% endif %}</div><small>If sales stay the same</small></div></div></div>
       <div class="col-md-3 col-6"><div class="card h-100"><div class="card-body"><div class="text-secondary">Reorder</div><div class="h3 mb-1">{% if decision.reorder_quantity != None %}{{ decision.reorder_label }}{% else %}Unavailable{% endif %}</div><small>{% if decision.reorder_quantity == 0 %}Nothing to order{% elif decision.reorder_quantity != None %}Suggested quantity{% else %}Cannot calculate{% endif %}</small></div></div></div>
     </div>
 
-    <div class="row g-3 mb-3">
+    <div class="row g-2 mb-3">
       <div class="col-lg-6"><div class="card h-100"><div class="card-body">
         <h3 class="h6 text-secondary text-uppercase">Next 14 days</h3>
         <div class="h3">{% if decision.next_14 != None %}About {{ decision.next_14_whole }} units{% else %}Not enough information{% endif %}</div>
@@ -63,7 +63,7 @@
       <div class="d-flex justify-content-between border-bottom py-2 gap-3"><strong>Shortage outlook</strong><span class="text-end">{{ decision.shortage_message }}</span></div>
       <div class="d-flex justify-content-between border-bottom py-2 gap-3"><strong>Incoming stock</strong><span class="text-end">{{ decision.incoming_message }}</span></div>
       <div class="d-flex justify-content-between py-2 gap-3"><strong>Unusual sales</strong><span class="text-end">{{ decision.unusual_message }}</span></div>
-      {% if results.forecast %}<details class="mt-3"><summary class="text-primary">Show daily forecast (30 days)</summary>
+      {% if results.forecast %}<details class="mt-3"><summary class="text-primary">Show weekly and daily forecast (30 days)</summary>
         <p class="small text-secondary mt-2">These weekly numbers add up the AI's daily predictions. Actual sales may differ.</p>
         <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Week</th><th>Typical-day total (units)</th></tr></thead><tbody>{% for week in weekly_forecast %}<tr><td>{{ week.start }} to {{ week.end }}</td><td>{{ week.median_total|floatformat:0 }}</td></tr>{% endfor %}</tbody></table></div>
         <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Date</th><th>Low (units)</th><th>Typical day (units)</th><th>High (units)</th></tr></thead><tbody>{% for day in results.forecast.predictions %}<tr><td>{{ day.date }}</td><td>{{ day.p10|floatformat:0 }}</td><td>{{ day.p50|floatformat:0 }}</td><td>{{ day.p90|floatformat:0 }}</td></tr>{% endfor %}</tbody></table></div>
@@ -76,6 +76,5 @@
     </div></div>
     <p class="text-secondary small text-center">Decision support only. Nothing is ordered or adjusted automatically.</p>
   {% endif %}
-  <a href="{% url 'home' %}" class="btn btn-outline-secondary mt-2">Back to Dashboard</a>
 </div>
 {% endblock %}
