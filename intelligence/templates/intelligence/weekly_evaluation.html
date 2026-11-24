@@ -4,8 +4,8 @@
 {% block title %}Forecast Comparison{% endblock %}
 
 {% block content %}
-<div class="container py-3">
-    <h2>Forecast Comparison</h2>
+<div class="intelligence-page">
+    <div class="page-heading"><h1>Forecast Comparison</h1><a href="{% url 'intelligence_dashboard' %}" class="btn btn-outline-secondary">Demand Intelligence</a></div>
 
     <p class="text-secondary">
         Comparing AI, the previous 7-day average, and
@@ -29,21 +29,15 @@
         <div class="card-body">
             <h3 class="h5">Evaluation summary</h3>
 
-            <p>Products considered:
-                {{ evaluation.product_count }}
-            </p>
-
-            <p>Product-weeks evaluated:
-                {{ evaluation.evaluated_product_weeks }}
-            </p>
-
-            <p>Product-weeks skipped:
-                {{ evaluation.skipped_product_weeks }}
-            </p>
+            <div class="row g-2 mb-3">
+                <div class="col-sm-4"><div class="border rounded p-3"><div class="small text-secondary">Products considered:</div><div class="h4 mb-0">{{ evaluation.product_count }}</div></div></div>
+                <div class="col-sm-4"><div class="border rounded p-3"><div class="small text-secondary">Product-weeks evaluated:</div><div class="h4 mb-0">{{ evaluation.evaluated_product_weeks }}</div></div></div>
+                <div class="col-sm-4"><div class="border rounded p-3"><div class="small text-secondary">Product-weeks skipped:</div><div class="h4 mb-0">{{ evaluation.skipped_product_weeks }}</div></div></div>
+            </div>
 
             {% if evaluation.evaluated_product_weeks %}
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table table-hover align-middle">
                         <thead>
                             <tr>
                                 <th>Method</th>
@@ -91,12 +85,12 @@
         <div class="card-body">
             <h3 class="h5">Weekly results</h3>
 
-            <div class="table-responsive">
-                <table class="table table-sm table-striped">
-                    <thead>
+            <div class="table-responsive" style="max-height: 480px; overflow: auto;">
+                <table class="table table-sm table-striped align-middle">
+                    <thead class="table-light sticky-top">
                         <tr>
                             <th>Product</th>
-                            <th>Week</th>
+                            <th class="text-nowrap">Week</th>
                             <th>Actual</th>
                             <th>AI</th>
                             <th>7-day average</th>
@@ -110,7 +104,7 @@
                         {% for row in evaluation.rows %}
                             <tr>
                                 <td>{{ row.product_name }}</td>
-                                <td>{{ row.week_start }} to {{ row.week_end }}</td>
+                                <td class="text-nowrap">{{ row.week_start }} to {{ row.week_end }}</td>
                                 <td>{{ row.actual }}</td>
                                 <td>{{ row.ai }}</td>
                                 <td>{{ row.average }}</td>
@@ -136,9 +130,6 @@
         Results are historical comparisons, not guarantees of future accuracy.
     </p>
 
-    <a href="{% url 'intelligence_dashboard' %}"
-       class="btn btn-outline-primary">
-        Back to Demand Intelligence
-    </a>
+
 </div>
 {% endblock %}
