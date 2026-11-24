@@ -145,3 +145,16 @@ p { margin-bottom: .65rem; }
     .topbar-actions { gap: .3rem; }
     .topbar-actions .btn { white-space: nowrap; }
 }
+
+/* Mobile navigation */
+.sidebar-close, .sidebar-backdrop { display: none; }
+@media (max-width: 900px) {
+    .app-sidebar { overflow-y: auto; height: 100dvh; }
+    .sidebar-close { display: block; align-self: flex-end; border: 0; background: transparent; font-size: 1.5rem; line-height: 1; padding: .25rem .5rem; }
+    body.sidebar-open .sidebar-backdrop { display: block; position: fixed; inset: 0; border: 0; background: rgba(20,30,45,.35); z-index: 25; }
+}
+@media (max-width: 600px) {
+    .topbar-role { display: none; }
+    .app-topbar { gap: .5rem; }
+    .topbar-title { min-width: 0; }
+}
