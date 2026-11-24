@@ -6,20 +6,31 @@
 {% block content %}
 
 <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
+    <div class="col-lg-9 col-xl-8">
 
-        <h2 class="mb-3">Create Employee</h2>
+        <h1 class="h3 mb-3">Create Employee</h1>
 
         <p class="text-muted mb-4">
             Enter the employee details below.
             A password setup link will be sent to their email.
         </p>
 
-        <form method="POST">
+        <form method="POST" class="card card-body catalog-form mb-3">
             {% csrf_token %}
 
             <div class="mb-4">
-                {{ form.as_p }}
+                {{ form.non_field_errors }}
+                {% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
+                <div class="catalog-field-grid">
+                    {% for field in form.visible_fields %}
+                    <div class="catalog-field">
+                        {{ field.label_tag }}
+                        <div class="d-grid">{{ field }}</div>
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                        {{ field.errors }}
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
 
             <div class="d-flex gap-2">
