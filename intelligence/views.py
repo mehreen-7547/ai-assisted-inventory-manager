@@ -266,8 +266,16 @@ def intelligence_dashboard(request):
 
 @role_required('manager')
 def weekly_evaluation_dashboard(request):
-    end_date = timezone.localdate()
-    end_date -= timedelta(days=end_date.weekday() + 1)
+    today = timezone.localdate()
+    end_date = today - timedelta(days=today.weekday() + 1)
+    latest_sales_date = DailySales.objects.filter(
+        date__lte=end_date
+    ).order_by('-date').values_list('date', flat=True).first()
+
+    if latest_sales_date is not None:
+        end_date = latest_sales_date - timedelta(
+            days=(latest_sales_date.weekday() + 1) % 7
+        )
 
     cache_key = f'weekly_forecast_evaluation_{end_date.isoformat()}'
     evaluation = cache.get(cache_key)
