@@ -6,20 +6,31 @@
 {% block content %}
 
 <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
+    <div class="col-lg-9 col-xl-8">
 
-        <h2 class="mb-3">Edit Employee</h2>
+        <h1 class="h3 mb-3">Edit Employee</h1>
 
         <p class="text-muted">
             Username: <strong>{{ employee.username }}</strong>
         </p>
 
         <!-- EDIT EMPLOYEE DETAILS -->
-        <form method="POST" class="mb-4">
+        <form method="POST" class="card card-body catalog-form mb-3">
             {% csrf_token %}
 
             <div class="mb-4">
-                {{ form.as_p }}
+                {{ form.non_field_errors }}
+                {% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
+                <div class="catalog-field-grid">
+                    {% for field in form.visible_fields %}
+                    <div class="catalog-field">
+                        {{ field.label_tag }}
+                        <div class="d-grid">{{ field }}</div>
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                        {{ field.errors }}
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
 
             <button type="submit" class="btn btn-primary">
@@ -27,10 +38,9 @@
             </button>
         </form>
 
-        <hr>
-
         <!-- EMPLOYEE STATUS -->
-        <h5 class="mt-4">Account Status</h5>
+        <section class="card card-body mb-3">
+        <h5>Account Status</h5>
 
         <p>
             Current status:
@@ -59,12 +69,12 @@
 
         </form>
 
+        </section>
         <!-- PASSWORD SETUP -->
         {% if employee.is_active and not employee.has_usable_password %}
 
-            <hr>
-
-            <h5 class="mt-4">Password Setup</h5>
+            <section class="card card-body mb-3">
+            <h5>Password Setup</h5>
 
             <p class="text-muted">
                 This employee has not set a password yet.
@@ -82,9 +92,8 @@
 
             </form>
 
+            </section>
         {% endif %}
-
-        <hr>
 
         <a href="{% url 'employee_list' %}"
            class="btn btn-outline-secondary mt-2">
