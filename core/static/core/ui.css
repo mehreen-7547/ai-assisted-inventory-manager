@@ -126,3 +126,22 @@ p { margin-bottom: .65rem; }
 .catalog-form-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; border-top: 1px solid var(--ui-border); padding-top: .85rem; }
 .catalog-status h5 { margin-top: 0 !important; }
 .catalog-status form { margin-bottom: 0 !important; }
+
+/* Persistent navigation and shared form controls */
+.app-topbar { position: sticky; top: 0; z-index: 20; }
+.topbar-actions { display: flex; align-items: center; gap: .8rem; margin-left: auto; }
+.app-main form input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), .app-main form select, .app-main form textarea { border: 1px solid #d5dce5; border-radius: 7px; padding: .45rem .65rem; background-color: white; color: var(--ui-text); font: inherit; max-width: 100%; }
+.app-main form input:focus, .app-main form select:focus, .app-main form textarea:focus { outline: 2px solid #c2d8ed; outline-offset: 1px; }
+.catalog-form { padding: 1.25rem !important; }
+.catalog-field-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem 1.25rem; margin-bottom: 1.15rem; }
+.catalog-field-wide { grid-column: 1 / -1; }
+.catalog-field label { font-size: .82rem; font-weight: 600; }
+.catalog-field input, .catalog-field select, .catalog-field textarea { min-height: 38px; }
+.catalog-field .errorlist { margin: .3rem 0 0; padding-left: 1rem; }
+@media (max-width: 600px) {
+    .catalog-field-grid { grid-template-columns: minmax(0,1fr); gap: .8rem; }
+    .catalog-form { padding: .9rem !important; }
+    .topbar-title { font-size: .72rem; }
+    .topbar-actions { gap: .3rem; }
+    .topbar-actions .btn { white-space: nowrap; }
+}
