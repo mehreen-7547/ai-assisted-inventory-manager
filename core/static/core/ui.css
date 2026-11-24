@@ -114,3 +114,15 @@ p { margin-bottom: .65rem; }
 .receipt-input .errorlist { color: #b42318; font-size: .75rem; padding-left: 1rem; margin: .3rem 0 0; }
 .receipt-actions { display: flex; justify-content: flex-end; align-items: center; gap: .6rem; padding-top: .85rem; }
 @media (max-width: 600px) { .page-heading { align-items: flex-start; } .page-heading h1 { font-size: 1.25rem; } .receipt-actions { flex-wrap: wrap; } }
+
+/* Catalog create/edit forms */
+.catalog-form, .catalog-status { max-width: 760px; }
+.catalog-form p { margin-bottom: .8rem; }
+.catalog-form label { display: block; margin-bottom: .3rem; }
+.catalog-form input:not([type=hidden]):not([type=checkbox]), .catalog-form select, .catalog-form textarea { display: block; width: 100%; border: 1px solid #d5dce5; border-radius: 7px; padding: .4rem .65rem; background: white; }
+.catalog-form textarea { min-height: 80px; }
+.catalog-form .helptext { display: block; font-size: .78rem; color: var(--ui-muted); margin-top: .25rem; }
+.catalog-form .errorlist { color: #b42318; font-size: .82rem; }
+.catalog-form-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; border-top: 1px solid var(--ui-border); padding-top: .85rem; }
+.catalog-status h5 { margin-top: 0 !important; }
+.catalog-status form { margin-bottom: 0 !important; }
